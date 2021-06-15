@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import random
 import string
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 
@@ -25,12 +24,7 @@ headers = {
 }
 
 
-@dataclass
-class TodoItem:
-    index: int
-
-
-class Destination(Enum):
+class Destination(int, Enum):
     # status: {0: inbox, 1: today/evening, 2: someday}
     INBOX = 0
     TODAY = 1
