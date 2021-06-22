@@ -138,7 +138,7 @@ def create(
                         "tir": as_timestamp(scheduled_date) if scheduled_date else None,
                         "tg": [],  # tags
                         "agr": [],
-                        "ix": 0,  # -35483
+                        "ix": 0,  # position (order in inbox for example)
                         "cd": now,  # creation_date
                         "lt": False,
                         "icc": 0,
