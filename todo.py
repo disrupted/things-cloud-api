@@ -11,6 +11,8 @@ from dataclasses_json.api import DataClassJsonMixin
 
 from things import Destination, as_timestamp, get_timestamp
 
+now = get_timestamp
+
 
 class Destination(int, Enum):
     # destination: {0: inbox, 1: today/evening, 2: someday}
@@ -33,16 +35,15 @@ class Note(DataClassJsonMixin):
     t: int = field(default=0, metadata=config(field_name="t"))
 
 
-now = get_timestamp
-
-
 @dataclass
 class TodoItem(DataClassJsonMixin):
     index: int = field(metadata=config(field_name="ix"))
     title: str = field(metadata=config(field_name="tt"))
     destination: Destination = field(metadata=config(field_name="st"))
-    creation_date: float = field(default=now(), metadata=config(field_name="cd"))
-    modification_date: float = field(default=now(), metadata=config(field_name="md"))
+    creation_date: float = field(default_factory=now, metadata=config(field_name="cd"))
+    modification_date: float = field(
+        default_factory=now, metadata=config(field_name="md")
+    )
     scheduled_date: Optional[int] = field(
         default=None, metadata=config(field_name="sr")
     )
@@ -73,21 +74,6 @@ class TodoItem(DataClassJsonMixin):
     sp: None = field(default=None, metadata=config(field_name="sp"))
     rr: None = field(default=None, metadata=config(field_name="rr"))
     note: Note = field(default_factory=Note, metadata=config(field_name="nt"))
-
-
-# @dataclass
-# class TodoItem():
-#     index: int
-#     destination: Destination
-
-#     def to_dict(self) -> dict:
-#         return {
-#             "ix": self.index,
-#             "st": self.destination.value,
-#         }
-
-#     def to_json(self) -> str:
-#         return json.dumps(self.to_dict())
 
 
 def create_todo_json(
@@ -139,14 +125,17 @@ def create_todo_json(
 
 if __name__ == "__main__":
     item = TodoItem(index=123, title="test", destination=Destination.TODAY)
+    print("serialize to dict")
     print(item.to_dict())
+
+    print("serialize to json")
     print(item.to_json())
     print(json.dumps(item.to_dict()))
 
-    print("deserialize dict")
+    print("deserialize from dict")
     deserialized_json = TodoItem.from_dict({"ix": 0, "tt": "test", "st": 0})
     print(deserialized_json)
 
-    print("deserialize json")
+    print("deserialize from json")
     deserialized_json = TodoItem.from_json(create_todo_json(title="test"))
     print(deserialized_json)
