@@ -9,6 +9,8 @@ python = "^3.9"
 requests = "^2.25.1"
 loguru = "^0.5.3"
 dataclasses-json = "^0.5.4"
+orjson = "^3.5.3"
+pydantic = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
