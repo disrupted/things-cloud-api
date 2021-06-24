@@ -198,5 +198,7 @@ if __name__ == "__main__":
     serialized_json = item.json(by_alias=True)
     print(serialized_json)
     print("deserialize from json")
-    deserialized_json = TodoItemPydantic(**json.loads(serialized_json))
+    deserialized_json = TodoItemPydantic.parse_raw(serialized_json)
+    # or
+    # deserialized_json = TodoItemPydantic(**json.loads(serialized_json))
     print(deserialized_json)
