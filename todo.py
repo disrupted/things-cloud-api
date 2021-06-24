@@ -21,6 +21,10 @@ def orjson_dumps(v, *, default):
     return orjson.dumps(v, default=default).decode()
 
 
+def orjson_prettydumps(v, *, default):
+    return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
+
+
 class Destination(int, Enum):
     # destination: {0: inbox, 1: today/evening, 2: someday}
     INBOX = 0
@@ -35,15 +39,18 @@ class Status(int, Enum):
 
 
 @dataclass
-class Note(DataClassJsonMixin):
-    _t: str = field(default="tx", metadata=config(field_name="_t"))
-    ch: int = field(default=0, metadata=config(field_name="ch"))
-    value: str = field(default="", metadata=config(field_name="v"))
-    t: int = field(default=0, metadata=config(field_name="t"))
+class Note(BaseModel):
+    # tpriv: str = Field("tx", alias="_t")
+    ch: int = Field(0, alias="ch")
+    # value: str = Field("", alias="v")
+    # t: int = Field(0, alias="t")
+
+    # class Config:
+    #     allow_population_by_field_name = True
 
 
 @dataclass
-class TodoItem(DataClassJsonMixin):
+class TodoItemData(DataClassJsonMixin):
     index: int = field(metadata=config(field_name="ix"))
     title: str = field(metadata=config(field_name="tt"))
     destination: Destination = field(metadata=config(field_name="st"))
@@ -83,12 +90,12 @@ class TodoItem(DataClassJsonMixin):
     note: Note = field(default_factory=Note, metadata=config(field_name="nt"))
 
 
-class TodoItemPydantic(BaseModel):
+class TodoItem(BaseModel):
     index: int = Field(alias="ix")
     title: str = Field(alias="tt")
     destination: Destination = Field(alias="st")
     creation_date: datetime = Field(datetime.now(), alias="cd")
-    modification_date: float = Field(default_factory=now, alias="md")
+    modification_date: float = Field(datetime.now(), alias="md")
     scheduled_date: Optional[int] = Field(None, alias="sr")
     tir: Optional[int] = Field(None, alias="tir")
     due_date: Optional[int] = Field(None, alias="dd")
@@ -116,7 +123,7 @@ class TodoItemPydantic(BaseModel):
     acrd: None = Field(None, alias="acrd")
     sp: None = Field(None, alias="sp")
     rr: None = Field(None, alias="rr")
-    note: Note = Field(default_factory=Note, alias="nt")
+    note: Note = Field(Note(), alias="nt")  # TODO fix deserialization error
 
     class Config:
         allow_population_by_field_name = True
@@ -125,6 +132,7 @@ class TodoItemPydantic(BaseModel):
         }
         # json_loads = orjson.loads
         # json_dumps = orjson_dumps
+        # json_dumps = orjson_prettydumps
 
 
 def create_todo_json(
@@ -175,7 +183,7 @@ def create_todo_json(
 
 
 if __name__ == "__main__":
-    # item = TodoItem(index=123, title="test", destination=Destination.TODAY)
+    # item = TodoItemData(index=123, title="test", destination=Destination.TODAY)
     # print("serialize to dict")
     # print(item.to_dict())
 
@@ -184,21 +192,19 @@ if __name__ == "__main__":
     # print(json.dumps(item.to_dict()))
 
     # print("deserialize from dict")
-    # deserialized_json = TodoItem.from_dict({"ix": 0, "tt": "test", "st": 0})
+    # deserialized_json = TodoItemData.from_dict({"ix": 0, "tt": "test", "st": 0})
     # print(deserialized_json)
 
     # print("deserialize from json")
-    # deserialized_json = TodoItem.from_json(create_todo_json(title="test"))
+    # deserialized_json = TodoItemData.from_json(create_todo_json(title="test"))
     # print(deserialized_json)
 
     print("using pydantic")
-    item = TodoItemPydantic(index=1, title="test", destination=Destination.TODAY)
+    item = TodoItem(index=1, title="test", destination=Destination.TODAY)
     print(item)
-    print("serialize to json")
-    serialized_json = item.json(by_alias=True)
-    print(serialized_json)
-    print("deserialize from json")
-    deserialized_json = TodoItemPydantic.parse_raw(serialized_json)
-    # or
-    # deserialized_json = TodoItemPydantic(**json.loads(serialized_json))
-    print(deserialized_json)
+    # print("serialize to json")
+    # serialized_json = item.json(by_alias=True)
+    # print(serialized_json)
+    # print("deserialize from json")
+    # deserialized_json = TodoItem.parse_raw(serialized_json)
+    # print(deserialized_json)
