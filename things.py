@@ -31,6 +31,10 @@ class Destination(int, Enum):
     SOMEDAY = 2
 
 
+def now() -> datetime:
+    return datetime.now()
+
+
 def get_timestamp() -> float:
     return datetime.now().timestamp()
 
