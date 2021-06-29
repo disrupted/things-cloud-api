@@ -1,6 +1,6 @@
 import pytest
 
-from things import create, get_current_index
+from things import Destination, create_todo_todo, get_current_index
 
 
 def test_create():
@@ -9,6 +9,6 @@ def test_create():
     assert current_index is not None
     assert current_index > start_index
 
-    index = create(current_index, title="test_create")
+    index = create_todo_todo(current_index, title="test_create", destination=Destination.TODAY)
     assert index is not None
     assert index == current_index + 1

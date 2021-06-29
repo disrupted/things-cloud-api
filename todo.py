@@ -52,8 +52,8 @@ class TodoItem(BaseModel):
     index: int = Field(alias="ix")
     title: str = Field(alias="tt")
     destination: Destination = Field(alias="st")
-    creation_date: datetime = Field(default_factory=Util.now, alias="cd")
-    modification_date: datetime = Field(Util.now(), alias="md")
+    creation_date: Optional[datetime] = Field(None, alias="cd")
+    modification_date: Optional[datetime] = Field(None, alias="md")
     scheduled_date: Optional[int] = Field(None, alias="sr")
     tir: Optional[int] = Field(None, alias="tir")
     due_date: Optional[int] = Field(None, alias="dd")
@@ -91,53 +91,6 @@ class TodoItem(BaseModel):
         json_loads = orjson.loads
         # json_dumps = orjson_dumps
         json_dumps = orjson_prettydumps
-
-
-# def create_todo_json(
-#     title: str,
-#     destination: Destination = Destination.INBOX,
-#     scheduled_date: datetime | None = None,
-#     due_date: datetime | None = None,
-# ) -> str:
-#     now = get_timestamp()
-#     data = json.dumps(
-#         {
-#             "tp": 0,
-#             "sr": as_timestamp(scheduled_date) if scheduled_date else None,
-#             "dds": None,
-#             "rt": [],
-#             "rmd": None,
-#             "ss": 0,  # status {0: todo, 3: done}?
-#             "tr": False,  # in_trash
-#             "dl": [],
-#             "icp": False,  # is_project
-#             "st": destination.value,
-#             "ar": [],  # areas
-#             "tt": title,
-#             "do": 0,
-#             "lai": None,
-#             "tir": as_timestamp(scheduled_date) if scheduled_date else None,
-#             "tg": [],  # tags
-#             "agr": [],
-#             "ix": 0,  # position (order in inbox for example)
-#             "cd": now,  # creation_date
-#             "lt": False,
-#             "icc": 0,
-#             "ti": 0,  # -454
-#             "md": now,  # modification_date
-#             "dd": as_timestamp(due_date) if due_date else None,
-#             "ato": None,
-#             "nt": {"_t": "tx", "ch": 0, "v": "", "t": 1},  # note
-#             "icsd": None,
-#             "pr": [],  # projects
-#             "rp": None,
-#             "acrd": None,
-#             "sp": None,
-#             "sb": 0,  # {0: not evening, 1: evening}, in addition to st=1 (today)
-#             "rr": None,
-#         },
-#     )
-#     return data
 
 
 if __name__ == "__main__":

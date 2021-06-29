@@ -11,7 +11,7 @@ from loguru import logger
 from requests.exceptions import RequestException
 from requests.models import Response
 
-from settings import ACCOUNT, USER_AGENT
+from settings import ACCOUNT, APP_ID, USER_AGENT
 
 API_BASE = "https://cloud.culturedcode.com/version/1"
 
@@ -53,6 +53,7 @@ def as_timestamp(dt: datetime) -> int:
 
 
 def create_random_string(len: int = 22) -> str:
+    # TODO: use uuid module here instead?
     return "".join(random.choices(string.ascii_letters, k=len))
 
 
@@ -94,16 +95,32 @@ def get_current_index(index: int) -> int | None:
         logger.error("Error getting current index", response.content)
 
 
-def create(
+def create_todo(
     index: int,
     title: str,
     destination: Destination,
     scheduled_date: datetime | None = None,
     due_date: datetime | None = None,
+    # *args,
+    # **kwargs,
 ) -> int | None:
-    now = get_timestamp()
     uuid = create_random_string()
+    # now = Util.now()
 
+    # create todo object
+    # item = TodoItem(
+    #     # *args,
+    #     # **kwargs
+    #     index=index,
+    #     title=title,
+    #     destination=destination,
+    #     # creation_date=now,
+    #     # modification_date=now,
+    #     scheduled_date=scheduled_date,
+    #     due_date=due_date,
+    # )
+
+    # send API request
     response = request(
         method="POST",
         endpoint=f"history/{ACCOUNT}/commit",
@@ -115,52 +132,12 @@ def create(
             **headers,
             "Schema": "301",
             "Content-Type": "application/json; charset=UTF-8",
-            "App-Id": "com.culturedcode.ThingsMac",
+            "App-Id": APP_ID,
+            "App-Instance-Id": f"-{APP_ID}",
             "Push-Priority": "5",
-            "App-Instance-Id": "-com.culturedcode.ThingsMac",
         },
         data=json.dumps(
-            {
-                uuid: {
-                    "t": 0,
-                    "e": "Task6",
-                    "p": {
-                        "tp": 0,
-                        "sr": as_timestamp(scheduled_date) if scheduled_date else None,
-                        "dds": None,
-                        "rt": [],
-                        "rmd": None,
-                        "ss": 0,  # status {0: todo, 3: done}?
-                        "tr": False,  # in_trash
-                        "dl": [],
-                        "icp": False,  # is_project
-                        "st": destination.value,
-                        "ar": [],  # areas
-                        "tt": title,
-                        "do": 0,
-                        "lai": None,
-                        "tir": as_timestamp(scheduled_date) if scheduled_date else None,
-                        "tg": [],  # tags
-                        "agr": [],
-                        "ix": 0,  # position (order in inbox for example)
-                        "cd": now,  # creation_date
-                        "lt": False,
-                        "icc": 0,
-                        "ti": 0,  # -454
-                        "md": now,  # modification_date
-                        "dd": as_timestamp(due_date) if due_date else None,
-                        "ato": None,
-                        "nt": {"_t": "tx", "ch": 0, "v": "", "t": 1},  # note
-                        "icsd": None,
-                        "pr": [],  # projects
-                        "rp": None,
-                        "acrd": None,
-                        "sp": None,
-                        "sb": 0,  # {0: not evening, 1: evening}, in addition to st=1 (today)
-                        "rr": None,
-                    },
-                }
-            }
+            {uuid: {"t": 0, "e": "Task6", "p": {}}}  # TODO  # item.dict(),
         ),
     )
     if not response:
@@ -176,7 +153,7 @@ if __name__ == "__main__":
     logger.debug(f"current index: {index}")
     due_date = today() + timedelta(days=2)
     if index is not None:
-        new_index = create(
+        new_index = create_todo(
             index,
             "HELLO WORLD",
             destination=Destination.INBOX,
