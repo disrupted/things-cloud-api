@@ -8,18 +8,17 @@ from todo import Status, TodoItem, Util
 FAKE_TIME = dt.datetime(2021, 1, 1)
 
 
-# TODO: write as setup/beforeall?
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def todo(monkeypatch):
     monkeypatch.setattr(Util, "now", lambda: FAKE_TIME)
     return TodoItem
 
 
-def test_mocked_now(todo):
+def test_mocked_now():
     assert Util.now() == FAKE_TIME
 
 
-def test_todo_schema_create(todo):
+def test_todo_schema_create():
     now = Util.now()
     item = TodoItem(
         index=1,
@@ -32,11 +31,12 @@ def test_todo_schema_create(todo):
     d = {
         "index": 1,
         "title": "test",
+        "status": Status.TODO,
         "destination": Destination.INBOX,
         "creation_date": FAKE_TIME,
         "modification_date": FAKE_TIME,
         "scheduled_date": None,
-        "status": Status.TODO,
+        "completion_date": None,
         "acrd": None,
         "agr": [],
         "areas": [],
@@ -57,7 +57,6 @@ def test_todo_schema_create(todo):
         "rr": None,
         "rt": [],
         "is_evening": 0,
-        "sp": None,
         "tags": [],
         "ti": 0,
         "tir": None,

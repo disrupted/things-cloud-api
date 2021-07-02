@@ -7,8 +7,6 @@ from typing import Any, List, Optional
 import orjson
 from pydantic import BaseModel, Field
 
-from things import Destination
-
 
 def orjson_dumps(v, *, default):
     # orjson.dumps returns bytes, to match standard json.dumps we need to decode
@@ -27,9 +25,9 @@ class Destination(int, Enum):
 
 
 class Status(int, Enum):
-    # status: {0: todo, 3: done}?
     TODO = 0
-    DONE = 3
+    CANCELLED = 2
+    COMPLETE = 3
 
 
 class Note(BaseModel):
@@ -51,13 +49,14 @@ class Util:
 class TodoItem(BaseModel):
     index: int = Field(alias="ix")
     title: str = Field(alias="tt")
+    status: Status = Field(Status.TODO, alias="ss")
     destination: Destination = Field(alias="st")
     creation_date: Optional[datetime] = Field(None, alias="cd")
     modification_date: Optional[datetime] = Field(None, alias="md")
     scheduled_date: Optional[int] = Field(None, alias="sr")
+    completion_date: Optional[datetime] = Field(None, alias="sp")
     tir: Optional[int] = Field(None, alias="tir")
     due_date: Optional[int] = Field(None, alias="dd")
-    status: Status = Field(Status.TODO, alias="ss")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
     projects: List[Any] = Field(default_factory=list, alias="pr")
@@ -79,7 +78,6 @@ class TodoItem(BaseModel):
     icsd: None = Field(None, alias="icsd")
     rp: None = Field(None, alias="rp")
     acrd: None = Field(None, alias="acrd")
-    sp: None = Field(None, alias="sp")
     rr: None = Field(None, alias="rr")
     note: Note = Field(default_factory=Note, alias="nt")
 
@@ -94,7 +92,6 @@ class TodoItem(BaseModel):
 
 
 if __name__ == "__main__":
-    print("using pydantic")
     item = TodoItem(index=1, title="test", destination=Destination.TODAY)
     print(item)
     # print("serialize to json")
