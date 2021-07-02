@@ -47,10 +47,10 @@ class Util:
 
 
 class TodoItem(BaseModel):
-    index: int = Field(alias="ix")
-    title: str = Field(alias="tt")
+    index: int = Field(0, alias="ix")
+    title: str = Field("", alias="tt")
     status: Status = Field(Status.TODO, alias="ss")
-    destination: Destination = Field(alias="st")
+    destination: Destination = Field(Destination.INBOX, alias="st")
     creation_date: Optional[datetime] = Field(None, alias="cd")
     modification_date: Optional[datetime] = Field(None, alias="md")
     scheduled_date: Optional[int] = Field(None, alias="sr")
@@ -90,9 +90,40 @@ class TodoItem(BaseModel):
         # json_dumps = orjson_dumps
         json_dumps = orjson_prettydumps
 
+    @staticmethod
+    def create(index: int, title: str, destination: Destination) -> TodoItem:
+        now = Util.now()
+        return TodoItem(
+            index=index,
+            title=title,
+            destination=destination,
+            creation_date=now,
+            modification_date=now,
+        )
+
+    @staticmethod
+    def complete() -> TodoItem:
+        item = TodoItem(status=Status.COMPLETE, completion_date=Util.now())
+        return item.copy(include={"status", "completion_date"})
+
+    @staticmethod
+    def cancel() -> TodoItem:
+        item = TodoItem(status=Status.CANCELLED, completion_date=Util.now())
+        return item.copy(include={"status", "completion_date"})
+
+    @staticmethod
+    def delete() -> TodoItem:
+        item = TodoItem(in_trash=True, modification_date=Util.now())
+        return item.copy(include={"in_trash", "modification_date"})
+
+    @staticmethod
+    def restore() -> TodoItem:
+        item = TodoItem(in_trash=False, modification_date=Util.now())
+        return item.copy(include={"in_trash", "modification_date"})
+
 
 if __name__ == "__main__":
-    item = TodoItem(index=1, title="test", destination=Destination.TODAY)
+    item = TodoItem.create(index=1, title="test", destination=Destination.TODAY)
     print(item)
     # print("serialize to json")
     # serialized_json = item.json(by_alias=True)

@@ -102,3 +102,67 @@ def test_todo_schema_create():
 
     assert item.dict() == d
     assert item.dict(by_alias=True) == d_alias
+
+
+def test_create():
+    item = TodoItem.create(
+        123,
+        "test",
+        Destination.TODAY,
+    )
+    d = {
+        "index": 123,
+        "title": "test",
+        "status": Status.TODO,
+        "destination": Destination.TODAY,
+        "creation_date": FAKE_TIME,
+        "modification_date": FAKE_TIME,
+        "scheduled_date": None,
+        "completion_date": None,
+        "acrd": None,
+        "agr": [],
+        "areas": [],
+        "ato": None,
+        "due_date": None,
+        "dds": None,
+        "dl": [],
+        "do": 0,
+        "icc": 0,
+        "is_project": False,
+        "icsd": None,
+        "lai": None,
+        "lt": False,
+        "note": {"ch": 0, "t": 0, "value": ""},
+        "projects": [],
+        "rmd": None,
+        "rp": None,
+        "rr": None,
+        "rt": [],
+        "is_evening": 0,
+        "tags": [],
+        "ti": 0,
+        "tir": None,
+        "tp": 0,
+        "in_trash": False,
+    }
+    assert item.dict() == d
+
+
+def test_complete():
+    item = TodoItem.complete()
+    assert item.dict() == {"status": Status.COMPLETE, "completion_date": FAKE_TIME}
+
+
+def test_cancel():
+    item = TodoItem.cancel()
+    assert item.dict() == {"status": Status.CANCELLED, "completion_date": FAKE_TIME}
+
+
+def test_delete():
+    item = TodoItem.delete()
+    assert item.dict() == {"in_trash": True, "modification_date": FAKE_TIME}
+
+
+def test_restore():
+    item = TodoItem.restore()
+    assert item.dict() == {"in_trash": False, "modification_date": FAKE_TIME}

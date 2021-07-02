@@ -179,7 +179,14 @@ def modify_todo(
 
 
 def complete_todo(uuid: str):
-    item = TodoItem(status=Status.COMPLETE, completion_date=Util.now())
+    item = TodoItem.complete()
+    modify_todo(uuid=uuid, item=item)
+
+
+def delete_todo(uuid: str):
+    # item = TodoItem(in_trash=True)
+    # item.copy(include={"in_trash"})
+    item = TodoItem.delete()
     modify_todo(uuid=uuid, item=item)
 
 
