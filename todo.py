@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, time
 from enum import Enum
 from typing import Any, List, Optional
 
@@ -53,10 +53,10 @@ class TodoItem(BaseModel):
     destination: Destination = Field(Destination.INBOX, alias="st")
     creation_date: Optional[datetime] = Field(None, alias="cd")
     modification_date: Optional[datetime] = Field(None, alias="md")
-    scheduled_date: Optional[int] = Field(None, alias="sr")
+    scheduled_date: Optional[datetime] = Field(None, alias="sr")  # TODO: round to int
     completion_date: Optional[datetime] = Field(None, alias="sp")
     tir: Optional[int] = Field(None, alias="tir")
-    due_date: Optional[datetime] = Field(None, alias="dd")
+    due_date: Optional[datetime] = Field(None, alias="dd")  # TODO: round to int
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
     projects: List[Any] = Field(default_factory=list, alias="pr")
@@ -74,7 +74,7 @@ class TodoItem(BaseModel):
     lt: bool = Field(False, alias="lt")
     icc: int = Field(0, alias="icc")
     ti: int = Field(0, alias="ti")
-    ato: None = Field(None, alias="ato")
+    reminder: Optional[time] = Field(None, alias="ato")
     icsd: None = Field(None, alias="icsd")
     rp: None = Field(None, alias="rp")
     acrd: None = Field(None, alias="acrd")
@@ -84,7 +84,8 @@ class TodoItem(BaseModel):
     class Config:
         allow_population_by_field_name = True
         json_encoders = {
-            datetime: lambda v: v.timestamp(),
+            datetime: lambda d: d.timestamp(),
+            time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
         }
         json_loads = orjson.loads
         # json_dumps = orjson_dumps
@@ -143,6 +144,20 @@ class TodoItem(BaseModel):
     def clear_due_date() -> TodoItem:
         item = TodoItem(due_date=None, modification_date=Util.now())
         return item.copy(include={"due_date", "modification_date"})
+
+    @staticmethod
+    def set_reminder(reminder: time, scheduled_date: datetime) -> TodoItem:
+        item = TodoItem(
+            reminder=reminder,
+            scheduled_date=scheduled_date,
+            modification_date=Util.now(),
+        )
+        return item.copy(include={"reminder", "scheduled_date", "modification_date"})
+
+    @staticmethod
+    def clear_reminder() -> TodoItem:
+        item = TodoItem(reminder=None, modification_date=Util.now())
+        return item.copy(include={"reminder", "modification_date"})
 
 
 if __name__ == "__main__":

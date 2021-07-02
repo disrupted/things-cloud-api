@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from things import Destination
+from things import Destination, today
 from todo import Status, TodoItem, Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
@@ -41,7 +41,7 @@ def test_todo_schema_create():
         "acrd": None,
         "agr": [],
         "areas": [],
-        "ato": None,
+        "reminder": None,
         "due_date": None,
         "dds": None,
         "dl": [],
@@ -123,7 +123,7 @@ def test_create():
         "acrd": None,
         "agr": [],
         "areas": [],
-        "ato": None,
+        "reminder": None,
         "due_date": None,
         "dds": None,
         "dl": [],
@@ -192,8 +192,8 @@ def test_set_due_date():
     assert item.dict() == {"due_date": due_date, "modification_date": FAKE_TIME}
     assert item.json(by_alias=True) == json.dumps(
         {
-            "dd": due_date.timestamp(),  # TODO: round to int
             "md": FAKE_TIME.timestamp(),
+            "dd": due_date.timestamp(),
         }
     )
 
@@ -201,3 +201,35 @@ def test_set_due_date():
 def test_clear_due_date():
     item = TodoItem.clear_due_date()
     assert item.dict() == {"due_date": None, "modification_date": FAKE_TIME}
+
+
+def test_set_reminder():
+    reminder = dt.time(21, 0)
+    scheduled_date = today()
+    item = TodoItem.set_reminder(reminder, scheduled_date)
+    assert item.dict() == {
+        "reminder": reminder,
+        "scheduled_date": scheduled_date,
+        "modification_date": FAKE_TIME,
+    }
+    assert item.json(by_alias=True) == json.dumps(
+        {
+            "md": FAKE_TIME.timestamp(),
+            "sr": scheduled_date.timestamp(),
+            "ato": 75600,
+        }
+    )
+
+
+def test_clear_reminder():
+    item = TodoItem.clear_reminder()
+    assert item.dict() == {
+        "reminder": None,
+        "modification_date": FAKE_TIME,
+    }
+    assert item.json(by_alias=True) == json.dumps(
+        {
+            "md": FAKE_TIME.timestamp(),
+            "ato": None,
+        }
+    )
