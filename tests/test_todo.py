@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 
 import pytest
 
@@ -148,14 +149,31 @@ def test_create():
     assert item.dict() == d
 
 
+def test_todo():
+    item = TodoItem.todo()
+    assert item.dict() == {
+        "status": Status.TODO,
+        "modification_date": FAKE_TIME,
+        "completion_date": None,
+    }
+
+
 def test_complete():
     item = TodoItem.complete()
-    assert item.dict() == {"status": Status.COMPLETE, "completion_date": FAKE_TIME}
+    assert item.dict() == {
+        "status": Status.COMPLETE,
+        "modification_date": FAKE_TIME,
+        "completion_date": FAKE_TIME,
+    }
 
 
 def test_cancel():
     item = TodoItem.cancel()
-    assert item.dict() == {"status": Status.CANCELLED, "completion_date": FAKE_TIME}
+    assert item.dict() == {
+        "status": Status.CANCELLED,
+        "modification_date": FAKE_TIME,
+        "completion_date": FAKE_TIME,
+    }
 
 
 def test_delete():
@@ -166,3 +184,20 @@ def test_delete():
 def test_restore():
     item = TodoItem.restore()
     assert item.dict() == {"in_trash": False, "modification_date": FAKE_TIME}
+
+
+def test_set_due_date():
+    due_date = dt.datetime(2021, 12, 31)
+    item = TodoItem.set_due_date(due_date)
+    assert item.dict() == {"due_date": due_date, "modification_date": FAKE_TIME}
+    assert item.json(by_alias=True) == json.dumps(
+        {
+            "dd": due_date.timestamp(),  # TODO: round to int
+            "md": FAKE_TIME.timestamp(),
+        }
+    )
+
+
+def test_clear_due_date():
+    item = TodoItem.clear_due_date()
+    assert item.dict() == {"due_date": None, "modification_date": FAKE_TIME}

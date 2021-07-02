@@ -56,7 +56,7 @@ class TodoItem(BaseModel):
     scheduled_date: Optional[int] = Field(None, alias="sr")
     completion_date: Optional[datetime] = Field(None, alias="sp")
     tir: Optional[int] = Field(None, alias="tir")
-    due_date: Optional[int] = Field(None, alias="dd")
+    due_date: Optional[datetime] = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
     projects: List[Any] = Field(default_factory=list, alias="pr")
@@ -88,7 +88,7 @@ class TodoItem(BaseModel):
         }
         json_loads = orjson.loads
         # json_dumps = orjson_dumps
-        json_dumps = orjson_prettydumps
+        # json_dumps = orjson_prettydumps # FIXME: json_encoders doesn't work with orjson
 
     @staticmethod
     def create(index: int, title: str, destination: Destination) -> TodoItem:
@@ -102,14 +102,27 @@ class TodoItem(BaseModel):
         )
 
     @staticmethod
+    def todo() -> TodoItem:
+        item = TodoItem(
+            status=Status.TODO, modification_date=Util.now(), completion_date=None
+        )
+        return item.copy(include={"status", "modification_date", "completion_date"})
+
+    @staticmethod
     def complete() -> TodoItem:
-        item = TodoItem(status=Status.COMPLETE, completion_date=Util.now())
-        return item.copy(include={"status", "completion_date"})
+        now = Util.now()
+        item = TodoItem(
+            status=Status.COMPLETE, modification_date=now, completion_date=now
+        )
+        return item.copy(include={"status", "modification_date", "completion_date"})
 
     @staticmethod
     def cancel() -> TodoItem:
-        item = TodoItem(status=Status.CANCELLED, completion_date=Util.now())
-        return item.copy(include={"status", "completion_date"})
+        now = Util.now()
+        item = TodoItem(
+            status=Status.CANCELLED, modification_date=now, completion_date=now
+        )
+        return item.copy(include={"status", "modification_date", "completion_date"})
 
     @staticmethod
     def delete() -> TodoItem:
@@ -120,6 +133,16 @@ class TodoItem(BaseModel):
     def restore() -> TodoItem:
         item = TodoItem(in_trash=False, modification_date=Util.now())
         return item.copy(include={"in_trash", "modification_date"})
+
+    @staticmethod
+    def set_due_date(deadline: datetime) -> TodoItem:
+        item = TodoItem(due_date=deadline, modification_date=Util.now())
+        return item.copy(include={"due_date", "modification_date"})
+
+    @staticmethod
+    def clear_due_date() -> TodoItem:
+        item = TodoItem(due_date=None, modification_date=Util.now())
+        return item.copy(include={"due_date", "modification_date"})
 
 
 if __name__ == "__main__":
