@@ -26,7 +26,7 @@ def serialize(v, *, default=None):
         elif isinstance(value, datetime):
             v[key] = value.timestamp()
 
-    return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
+    return orjson_prettydumps(v, default=default)
 
 
 class Destination(int, Enum):
@@ -95,13 +95,8 @@ class TodoItem(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda d: d.timestamp(),
-            time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
-        }
         json_loads = orjson.loads
         json_dumps = serialize
-        # json_dumps = orjson_prettydumps # FIXME: json_encoders doesn't work with orjson
 
     @staticmethod
     def create(index: int, title: str, destination: Destination) -> TodoItem:
