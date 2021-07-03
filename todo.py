@@ -8,12 +8,24 @@ import orjson
 from pydantic import BaseModel, Field
 
 
-def orjson_dumps(v, *, default):
+def orjson_dumps(v, *, default=None):
     # orjson.dumps returns bytes, to match standard json.dumps we need to decode
     return orjson.dumps(v, default=default).decode()
 
 
-def orjson_prettydumps(v, *, default):
+def orjson_prettydumps(v, *, default=None):
+    return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
+
+
+def serialize(v, *, default=None):
+    for key, value in v.items():
+        if key == "sb":
+            v[key] = int(value)
+        elif isinstance(value, time):
+            v[key] = (value.hour * 60 + value.minute) * 60 + value.second
+        elif isinstance(value, datetime):
+            v[key] = value.timestamp()
+
     return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
 
 
@@ -61,7 +73,7 @@ class TodoItem(BaseModel):
     is_project: bool = Field(False, alias="icp")
     projects: List[Any] = Field(default_factory=list, alias="pr")
     areas: List[Any] = Field(default_factory=list, alias="ar")
-    is_evening: int = Field(0, alias="sb")
+    is_evening: bool = Field(False, alias="sb")
     tags: List[Any] = Field(default_factory=list, alias="tg")
     tp: int = Field(0, alias="tp")
     dds: None = Field(None, alias="dds")
@@ -73,7 +85,7 @@ class TodoItem(BaseModel):
     agr: List[Any] = Field(default_factory=list, alias="agr")
     lt: bool = Field(False, alias="lt")
     icc: int = Field(0, alias="icc")
-    ti: int = Field(0, alias="ti")
+    ti: int = Field(0, alias="ti")  # position/order of items
     reminder: Optional[time] = Field(None, alias="ato")
     icsd: None = Field(None, alias="icsd")
     rp: None = Field(None, alias="rp")
@@ -88,7 +100,7 @@ class TodoItem(BaseModel):
             time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
         }
         json_loads = orjson.loads
-        # json_dumps = orjson_dumps
+        json_dumps = serialize
         # json_dumps = orjson_prettydumps # FIXME: json_encoders doesn't work with orjson
 
     @staticmethod
@@ -158,6 +170,14 @@ class TodoItem(BaseModel):
     def clear_reminder() -> TodoItem:
         item = TodoItem(reminder=None, modification_date=Util.now())
         return item.copy(include={"reminder", "modification_date"})
+
+    @staticmethod
+    def set_evening() -> TodoItem:
+        item = TodoItem(
+            is_evening=1,
+            modification_date=Util.now(),
+        )
+        return item.copy(include={"is_evening", "modification_date"})
 
 
 if __name__ == "__main__":
