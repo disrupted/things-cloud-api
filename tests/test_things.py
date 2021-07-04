@@ -9,6 +9,8 @@ def test_create():
     assert current_index is not None
     assert current_index > start_index
 
-    index = create_todo_todo(current_index, title="test_create", destination=Destination.TODAY)
+    index = create_todo_todo(
+        current_index, title="test_create", destination=Destination.TODAY
+    )
     assert index is not None
     assert index == current_index + 1

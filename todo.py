@@ -2,47 +2,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
 from enum import Enum
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
 
 import orjson
 import shortuuid
 from pydantic import BaseModel, Field
 
-
-def orjson_dumps(v, *, default=None):
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v, default=default).decode()
-
-
-def orjson_prettydumps(v, *, default=None):
-    return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
-
-
-def timestamp_rounded(d: Optional[datetime]) -> Optional[int]:
-    if d:
-        return int(d.timestamp())
-
-
-field_serializers: dict[str, Callable] = {
-    "sb": lambda v: int(v),
-    "sr": timestamp_rounded,
-    "dd": timestamp_rounded,
-}
-
-type_serializers: dict[type, Callable] = {
-    time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
-    datetime: lambda d: d.timestamp(),
-}
-
-
-def serialize(v, *, default=None):
-    for key, value in v.items():
-        if serializer := field_serializers.get(key):
-            v[key] = serializer(value)
-        elif serializer := type_serializers.get(type(value)):
-            v[key] = serializer(value)
-
-    return orjson_prettydumps(v, default=default)
+from serde import TodoSerde
 
 
 class Destination(int, Enum):
@@ -136,9 +102,10 @@ class TodoItem(BaseModel):
     note: Note = Field(default_factory=Note, alias="nt")
 
     class Config:
+        serde = TodoSerde()
         allow_population_by_field_name = True
-        json_loads = orjson.loads
-        json_dumps = serialize
+        json_loads = serde.deserialize
+        json_dumps = serde.serialize
 
     def serialize(self) -> str:
         return self.json(by_alias=True)

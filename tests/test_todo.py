@@ -2,8 +2,9 @@ import datetime as dt
 
 import pytest
 
+from serde import TodoSerde
 from things import Destination
-from todo import Status, TodoItem, Util, orjson_prettydumps
+from todo import Status, TodoItem, Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
 
@@ -189,7 +190,7 @@ def test_set_due_date():
     due_date = dt.datetime(2021, 12, 31)
     item = TodoItem.set_due_date(due_date)
     assert item.dict() == {"due_date": due_date, "modification_date": FAKE_TIME}
-    assert item.json(by_alias=True) == orjson_prettydumps(
+    assert item.json(by_alias=True) == TodoSerde.prettydumps(
         {
             "md": FAKE_TIME.timestamp(),
             "dd": int(due_date.timestamp()),
@@ -211,7 +212,7 @@ def test_set_reminder():
         "scheduled_date": scheduled_date,
         "modification_date": FAKE_TIME,
     }
-    assert item.json(by_alias=True) == orjson_prettydumps(
+    assert item.json(by_alias=True) == TodoSerde.prettydumps(
         {
             "md": FAKE_TIME.timestamp(),
             "sr": int(scheduled_date.timestamp()),
@@ -226,7 +227,7 @@ def test_clear_reminder():
         "reminder": None,
         "modification_date": FAKE_TIME,
     }
-    assert item.json(by_alias=True) == orjson_prettydumps(
+    assert item.json(by_alias=True) == TodoSerde.prettydumps(
         {
             "md": FAKE_TIME.timestamp(),
             "ato": None,
@@ -240,7 +241,7 @@ def test_set_evening():
         "is_evening": True,
         "modification_date": FAKE_TIME,
     }
-    assert item.json(by_alias=True) == orjson_prettydumps(
+    assert item.json(by_alias=True) == TodoSerde.prettydumps(
         {
             "md": FAKE_TIME.timestamp(),
             "sb": 1,

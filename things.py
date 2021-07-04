@@ -5,8 +5,9 @@ from loguru import logger
 from requests.exceptions import RequestException
 from requests.models import Response
 
+from serde import JsonSerde
 from settings import ACCOUNT, APP_ID, USER_AGENT
-from todo import Destination, TodoItem, Util, orjson_prettydumps
+from todo import Destination, TodoItem, Util
 
 API_BASE = "https://cloud.culturedcode.com/version/1"
 
@@ -67,7 +68,7 @@ def get_current_index(index: int) -> int:
 
 def create_todo(index: int, item: TodoItem) -> int:
     uuid = Util.uuid()
-    data = orjson_prettydumps(
+    data = JsonSerde.prettydumps(
         {uuid: {"t": 0, "e": "Task6", "p": item.serialize_dict()}}
     )
     logger.debug(data)
@@ -93,7 +94,7 @@ def create_todo(index: int, item: TodoItem) -> int:
 
 
 def modify_todo(uuid: str, index: int, item: TodoItem) -> int:
-    data = orjson_prettydumps(
+    data = JsonSerde.prettydumps(
         {uuid: {"t": 1, "e": "Task6", "p": item.serialize_dict()}}
     )
     logger.debug(data)
