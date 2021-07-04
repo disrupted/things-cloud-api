@@ -18,10 +18,15 @@ def orjson_prettydumps(v, *, default=None):
     return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
 
 
+def timestamp_rounded(d: Optional[datetime]) -> Optional[int]:
+    if d:
+        return int(d.timestamp())
+
+
 field_serializers: dict[str, Callable] = {
     "sb": lambda v: int(v),
-    "sr": lambda d: int(d.timestamp()),
-    "dd": lambda d: int(d.timestamp()),
+    "sr": timestamp_rounded,
+    "dd": timestamp_rounded,
 }
 
 type_serializers: dict[type, Callable] = {
@@ -78,6 +83,11 @@ class Util:
         return datetime.combine(date.today(), datetime.min.time(), tz_local)
 
     @staticmethod
+    def tomorrow() -> datetime:
+        """As an example how to use timedelta"""
+        return Util.today() + timedelta(days=1)
+
+    @staticmethod
     def offset_date(dt: datetime, days: int) -> datetime:
         return dt + timedelta(days=days)
 
@@ -130,8 +140,11 @@ class TodoItem(BaseModel):
         json_loads = orjson.loads
         json_dumps = serialize
 
-    def serialize(self):
+    def serialize(self) -> str:
         return self.json(by_alias=True)
+
+    def serialize_dict(self) -> dict:
+        return orjson.loads(self.serialize())
 
     @staticmethod
     def create(index: int, title: str, destination: Destination) -> TodoItem:

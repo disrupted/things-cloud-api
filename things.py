@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import json
-from datetime import datetime, timedelta
-
 import requests
 from loguru import logger
 from requests.exceptions import RequestException
 from requests.models import Response
 
 from settings import ACCOUNT, APP_ID, USER_AGENT
-from todo import Destination, TodoItem, Util
+from todo import Destination, TodoItem, Util, orjson_prettydumps
 
 API_BASE = "https://cloud.culturedcode.com/version/1"
 
@@ -19,7 +16,16 @@ headers = {
     "Accept-Language": "en-gb",
     "Host": "cloud.culturedcode.com",
     "User-Agent": USER_AGENT,
+    "Schema": "301",
+    "Content-Type": "application/json; charset=UTF-8",
+    "App-Id": APP_ID,
+    "App-Instance-Id": f"-{APP_ID}",
+    "Push-Priority": "5",
 }
+
+
+class ThingsCloudException(Exception):
+    pass
 
 
 def request(
@@ -28,7 +34,7 @@ def request(
     params: dict = {},
     headers: dict = headers,
     data: str | None = None,
-) -> Response | None:
+) -> Response:
     try:
         response = requests.request(
             method=method,
@@ -41,10 +47,10 @@ def request(
         logger.debug(f"Body: {response.content}")
         return response
     except RequestException as e:
-        logger.error("HTTP Request failed", e)
+        raise ThingsCloudException from e
 
 
-def get_current_index(index: int) -> int | None:
+def get_current_index(index: int) -> int:
     response = request(
         method="GET",
         endpoint=f"history/{ACCOUNT}/items",
@@ -52,38 +58,19 @@ def get_current_index(index: int) -> int | None:
             "start-index": str(index),
         },
     )
-    if not response:
-        return
-    if response.status_code == 200:
+    if response and response.status_code == 200:
         return response.json()["current-item-index"]
     else:
-        logger.error("Error getting current index", response.content)
+        logger.error("Error getting current index", response)
+        raise ThingsCloudException
 
 
-def create_todo(
-    index: int,
-    title: str,
-    destination: Destination,
-    scheduled_date: datetime | None = None,
-    due_date: datetime | None = None,
-    # *args,
-    # **kwargs,
-) -> int | None:
+def create_todo(index: int, item: TodoItem) -> int:
     uuid = Util.uuid()
-    # now = Util.now()
-
-    # create todo object
-    item = TodoItem(
-        # *args,
-        # **kwargs
-        index=index,
-        title=title,
-        destination=destination,
-        # creation_date=now,
-        # modification_date=now,
-        scheduled_date=scheduled_date,
-        due_date=due_date,
+    data = orjson_prettydumps(
+        {uuid: {"t": 0, "e": "Task6", "p": item.serialize_dict()}}
     )
+    logger.debug(data)
 
     # send API request
     response = request(
@@ -95,34 +82,21 @@ def create_todo(
         },
         headers={
             **headers,
-            "Schema": "301",
-            "Content-Type": "application/json; charset=UTF-8",
-            "App-Id": APP_ID,
-            "App-Instance-Id": f"-{APP_ID}",
-            "Push-Priority": "5",
         },
-        data=json.dumps({uuid: {"t": 0, "e": "Task6", "p": item.dict()}}),
+        data=data,
     )
-    if not response:
-        return
-    if response.status_code == 200:
+    if response and response.status_code == 200:
         return response.json()["server-head-index"]
     else:
-        logger.error("Error creating new item", response.content)
+        logger.error("Error creating new item", response)
+        raise ThingsCloudException
 
 
-def modify_todo(
-    uuid: str,
-    item: TodoItem,
-    # index: int,
-    # title: str,
-    # destination: Destination,
-    # scheduled_date: datetime | None = None,
-    # due_date: datetime | None = None,
-    # *args,
-    # **kwargs,
-) -> int | None:
-    # item = TodoItem(*args, **kwargs)
+def modify_todo(uuid: str, index: int, item: TodoItem) -> int:
+    data = orjson_prettydumps(
+        {uuid: {"t": 1, "e": "Task6", "p": item.serialize_dict()}}
+    )
+    logger.debug(data)
 
     # send API request
     response = request(
@@ -134,43 +108,30 @@ def modify_todo(
         },
         headers={
             **headers,
-            "Schema": "301",
-            "Content-Type": "application/json; charset=UTF-8",
-            "App-Id": APP_ID,
-            "App-Instance-Id": f"-{APP_ID}",
-            "Push-Priority": "5",
         },
-        data=json.dumps({uuid: {"t": 1, "e": "Task6", "p": item.dict()}}),
+        data=data,
     )
-    if not response:
-        return
-    if response.status_code == 200:
+    if response and response.status_code == 200:
         return response.json()["server-head-index"]
     else:
-        logger.error("Error creating new item", response.content)
+        logger.error("Error creating new item", response)
+        raise ThingsCloudException
 
 
-def complete_todo(uuid: str):
+def complete_todo(uuid: str, index: int):
     item = TodoItem.complete()
-    modify_todo(uuid=uuid, item=item)
+    modify_todo(uuid, index, item)
 
 
-def delete_todo(uuid: str):
-    # item = TodoItem(in_trash=True)
-    # item.copy(include={"in_trash"})
+def delete_todo(uuid: str, index: int):
     item = TodoItem.delete()
-    modify_todo(uuid=uuid, item=item)
+    modify_todo(uuid, index, item)
 
 
 if __name__ == "__main__":
-    index = get_current_index(1540)
+    index = get_current_index(2290)
     logger.debug(f"current index: {index}")
-    due_date = Util.today() + timedelta(days=2)
     if index is not None:
-        new_index = create_todo(
-            index,
-            "HELLO WORLD",
-            destination=Destination.INBOX,
-            # due_date=due_date,
-        )
+        item = TodoItem.create(index, "HELLO WORLD", Destination.INBOX)
+        new_index = create_todo(index, item)
         logger.debug(f"new index: {new_index}")
