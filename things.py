@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import requests
-import shortuuid
 from loguru import logger
 from requests.exceptions import RequestException
 from requests.models import Response
 
 from settings import ACCOUNT, APP_ID, USER_AGENT
-from todo import Destination, TodoItem
+from todo import Destination, TodoItem, Util
 
 API_BASE = "https://cloud.culturedcode.com/version/1"
 
@@ -21,31 +20,6 @@ headers = {
     "Host": "cloud.culturedcode.com",
     "User-Agent": USER_AGENT,
 }
-
-
-def now() -> datetime:
-    return datetime.now()
-
-
-def get_timestamp() -> float:
-    return datetime.now().timestamp()
-
-
-def today() -> datetime:
-    tz_local = datetime.now(timezone.utc).astimezone().tzinfo
-    return datetime.combine(date.today(), datetime.min.time(), tz_local)
-
-
-def offset_date(dt: datetime, days: int) -> datetime:
-    return dt + timedelta(days=days)
-
-
-def as_timestamp(dt: datetime) -> int:
-    return int(dt.replace(tzinfo=timezone.utc).timestamp())
-
-
-def create_uuid(length: int = 22) -> str:
-    return shortuuid.ShortUUID().random(length=length)
 
 
 def request(
@@ -95,7 +69,7 @@ def create_todo(
     # *args,
     # **kwargs,
 ) -> int | None:
-    uuid = create_uuid()
+    uuid = Util.uuid()
     # now = Util.now()
 
     # create todo object
@@ -191,7 +165,7 @@ def delete_todo(uuid: str):
 if __name__ == "__main__":
     index = get_current_index(1540)
     logger.debug(f"current index: {index}")
-    due_date = today() + timedelta(days=2)
+    due_date = Util.today() + timedelta(days=2)
     if index is not None:
         new_index = create_todo(
             index,

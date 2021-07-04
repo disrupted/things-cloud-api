@@ -2,7 +2,7 @@ import datetime as dt
 
 import pytest
 
-from things import Destination, today
+from things import Destination
 from todo import Status, TodoItem, Util, orjson_prettydumps
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
@@ -204,7 +204,7 @@ def test_clear_due_date():
 
 def test_set_reminder():
     reminder = dt.time(21, 0)
-    scheduled_date = today()
+    scheduled_date = Util.today()
     item = TodoItem.set_reminder(reminder, scheduled_date)
     assert item.dict() == {
         "reminder": reminder,

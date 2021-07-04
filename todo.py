@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import date, datetime, time, timedelta, timezone
 from enum import Enum
 from typing import Any, Callable, List, Optional
 
 import orjson
+import shortuuid
 from pydantic import BaseModel, Field
 
 
@@ -64,8 +65,29 @@ class Note(BaseModel):
 
 class Util:
     @staticmethod
-    def now():
+    def now() -> datetime:
         return datetime.now()
+
+    @staticmethod
+    def get_timestamp() -> float:
+        return datetime.now().timestamp()
+
+    @staticmethod
+    def today() -> datetime:
+        tz_local = datetime.now(timezone.utc).astimezone().tzinfo
+        return datetime.combine(date.today(), datetime.min.time(), tz_local)
+
+    @staticmethod
+    def offset_date(dt: datetime, days: int) -> datetime:
+        return dt + timedelta(days=days)
+
+    @staticmethod
+    def as_timestamp(dt: datetime) -> int:
+        return int(dt.replace(tzinfo=timezone.utc).timestamp())
+
+    @staticmethod
+    def uuid(length: int = 22) -> str:
+        return shortuuid.ShortUUID().random(length=length)
 
 
 class TodoItem(BaseModel):
