@@ -192,7 +192,7 @@ def test_set_due_date():
     assert item.json(by_alias=True) == orjson_prettydumps(
         {
             "md": FAKE_TIME.timestamp(),
-            "dd": due_date.timestamp(),
+            "dd": int(due_date.timestamp()),
         }
     )
 
@@ -214,7 +214,7 @@ def test_set_reminder():
     assert item.json(by_alias=True) == orjson_prettydumps(
         {
             "md": FAKE_TIME.timestamp(),
-            "sr": scheduled_date.timestamp(),
+            "sr": int(scheduled_date.timestamp()),
             "ato": 75600,
         }
     )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, time
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import orjson
 from pydantic import BaseModel, Field
@@ -17,14 +17,24 @@ def orjson_prettydumps(v, *, default=None):
     return orjson.dumps(v, default=default, option=orjson.OPT_INDENT_2).decode()
 
 
+field_serializers: dict[str, Callable] = {
+    "sb": lambda v: int(v),
+    "sr": lambda d: int(d.timestamp()),
+    "dd": lambda d: int(d.timestamp()),
+}
+
+type_serializers: dict[type, Callable] = {
+    time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
+    datetime: lambda d: d.timestamp(),
+}
+
+
 def serialize(v, *, default=None):
     for key, value in v.items():
-        if key == "sb":
-            v[key] = int(value)
-        elif isinstance(value, time):
-            v[key] = (value.hour * 60 + value.minute) * 60 + value.second
-        elif isinstance(value, datetime):
-            v[key] = value.timestamp()
+        if serializer := field_serializers.get(key):
+            v[key] = serializer(value)
+        elif serializer := type_serializers.get(type(value)):
+            v[key] = serializer(value)
 
     return orjson_prettydumps(v, default=default)
 
@@ -65,10 +75,10 @@ class TodoItem(BaseModel):
     destination: Destination = Field(Destination.INBOX, alias="st")
     creation_date: Optional[datetime] = Field(None, alias="cd")
     modification_date: Optional[datetime] = Field(None, alias="md")
-    scheduled_date: Optional[datetime] = Field(None, alias="sr")  # TODO: round to int
+    scheduled_date: Optional[datetime] = Field(None, alias="sr")
     completion_date: Optional[datetime] = Field(None, alias="sp")
     tir: Optional[int] = Field(None, alias="tir")
-    due_date: Optional[datetime] = Field(None, alias="dd")  # TODO: round to int
+    due_date: Optional[datetime] = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
     projects: List[Any] = Field(default_factory=list, alias="pr")
@@ -97,6 +107,9 @@ class TodoItem(BaseModel):
         allow_population_by_field_name = True
         json_loads = orjson.loads
         json_dumps = serialize
+
+    def serialize(self):
+        return self.json(by_alias=True)
 
     @staticmethod
     def create(index: int, title: str, destination: Destination) -> TodoItem:

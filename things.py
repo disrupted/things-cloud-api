@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import json
-import random
-import string
 from datetime import date, datetime, timedelta, timezone
 
 import requests
+import shortuuid
 from loguru import logger
 from requests.exceptions import RequestException
 from requests.models import Response
 
 from settings import ACCOUNT, APP_ID, USER_AGENT
-from todo import Destination, Status, TodoItem, Util
+from todo import Destination, TodoItem
 
 API_BASE = "https://cloud.culturedcode.com/version/1"
 
@@ -45,9 +44,8 @@ def as_timestamp(dt: datetime) -> int:
     return int(dt.replace(tzinfo=timezone.utc).timestamp())
 
 
-def create_random_string(len: int = 22) -> str:
-    # TODO: use uuid module here instead?
-    return "".join(random.choices(string.ascii_letters, k=len))
+def create_uuid(length: int = 22) -> str:
+    return shortuuid.ShortUUID().random(length=length)
 
 
 def request(
@@ -97,7 +95,7 @@ def create_todo(
     # *args,
     # **kwargs,
 ) -> int | None:
-    uuid = create_random_string()
+    uuid = create_uuid()
     # now = Util.now()
 
     # create todo object
