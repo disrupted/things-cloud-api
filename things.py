@@ -7,7 +7,8 @@ from requests.models import Response
 
 from serde import JsonSerde
 from settings import ACCOUNT, APP_ID, USER_AGENT
-from todo import Destination, TodoItem, Util
+from todo import Destination, TodoItem
+from utils import Util
 
 API_BASE = "https://cloud.culturedcode.com/version/1"
 

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time
 from enum import Enum
 from typing import Any, List, Optional
 
-import orjson
-import shortuuid
 from pydantic import BaseModel, Field
 
 from serde import TodoSerde
+from utils import Util
+
+serde = TodoSerde()
 
 
 class Destination(int, Enum):
@@ -32,38 +33,6 @@ class Note(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-
-
-class Util:
-    @staticmethod
-    def now() -> datetime:
-        return datetime.now()
-
-    @staticmethod
-    def get_timestamp() -> float:
-        return datetime.now().timestamp()
-
-    @staticmethod
-    def today() -> datetime:
-        tz_local = datetime.now(timezone.utc).astimezone().tzinfo
-        return datetime.combine(date.today(), datetime.min.time(), tz_local)
-
-    @staticmethod
-    def tomorrow() -> datetime:
-        """As an example how to use timedelta"""
-        return Util.today() + timedelta(days=1)
-
-    @staticmethod
-    def offset_date(dt: datetime, days: int) -> datetime:
-        return dt + timedelta(days=days)
-
-    @staticmethod
-    def as_timestamp(dt: datetime) -> int:
-        return int(dt.replace(tzinfo=timezone.utc).timestamp())
-
-    @staticmethod
-    def uuid(length: int = 22) -> str:
-        return shortuuid.ShortUUID().random(length=length)
 
 
 class TodoItem(BaseModel):
@@ -102,7 +71,6 @@ class TodoItem(BaseModel):
     note: Note = Field(default_factory=Note, alias="nt")
 
     class Config:
-        serde = TodoSerde()
         allow_population_by_field_name = True
         json_loads = serde.deserialize
         json_dumps = serde.serialize
@@ -111,7 +79,7 @@ class TodoItem(BaseModel):
         return self.json(by_alias=True)
 
     def serialize_dict(self) -> dict:
-        return orjson.loads(self.serialize())
+        return serde.deserialize(self.serialize())
 
     @staticmethod
     def create(index: int, title: str, destination: Destination) -> TodoItem:

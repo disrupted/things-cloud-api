@@ -4,7 +4,8 @@ import pytest
 
 from serde import TodoSerde
 from things import Destination
-from todo import Status, TodoItem, Util
+from todo import Status, TodoItem
+from utils import Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
 
