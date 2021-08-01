@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
-from serde import TodoSerde
+from serde import DictSerde, TodoSerde
 from utils import Util
 
 serde = TodoSerde()

@@ -8,7 +8,7 @@ from shortuuid import ShortUUID
 class Util:
     @staticmethod
     def now() -> datetime:
-        return datetime.now()
+        return datetime.utcnow()
 
     @staticmethod
     def today() -> datetime:
