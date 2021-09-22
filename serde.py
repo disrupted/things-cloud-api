@@ -69,14 +69,14 @@ class TodoSerde(JsonSerde):
 
 class DictSerde(Serde):
     @staticmethod
-    def dumps(*args) -> dict:
+    def dumps(*args) -> str:
         return json.dumps(*args, default=pydantic.json.pydantic_encoder)
 
     # @staticmethod
     # def prettydumps(v, *, default=None) -> str:
     #     return JsonSerde.dumps(v, default=default, indent=orjson.OPT_INDENT_2)
 
-    def serialize(self, v, *, default=None) -> dict:
+    def serialize(self, v) -> str:
         # for key, value in v.items():
         #     if serializer := self.field_serializers.get(key):
         #         v[key] = serializer(value)
