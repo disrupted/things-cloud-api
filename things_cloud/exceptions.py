@@ -1,0 +1,2 @@
+class ThingsCloudException(Exception):
+    pass
