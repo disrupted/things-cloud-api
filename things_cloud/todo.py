@@ -6,8 +6,8 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
-from serde import TodoSerde
-from utils import Util
+from .serde import TodoSerde
+from .utils import Util
 
 serde = TodoSerde()
 
@@ -82,10 +82,9 @@ class TodoItem(BaseModel):
         return serde.deserialize(self.serialize())
 
     @staticmethod
-    def create(index: int, title: str, destination: Destination) -> TodoItem:
+    def create(title: str, destination: Destination) -> TodoItem:
         now = Util.now()
         return TodoItem(
-            index=index,
             title=title,
             destination=destination,
             creation_date=now,
@@ -156,14 +155,3 @@ class TodoItem(BaseModel):
             modification_date=Util.now(),
         )
         return item.copy(include={"is_evening", "modification_date"})
-
-
-if __name__ == "__main__":
-    item = TodoItem.create(index=1, title="test", destination=Destination.TODAY)
-    print(item)
-    # print("serialize to json")
-    # serialized_json = item.json(by_alias=True)
-    # print(serialized_json)
-    # print("deserialize from json")
-    # deserialized_json = TodoItem.parse_raw(serialized_json)
-    # print(deserialized_json)

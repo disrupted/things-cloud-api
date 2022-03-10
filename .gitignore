@@ -139,4 +139,4 @@ dmypy.json
 .prof
 
 # project specific
-settings.py
+.envrc

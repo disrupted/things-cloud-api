@@ -3,7 +3,7 @@ import datetime as dt
 from dateutil.tz import tzlocal
 from freezegun import freeze_time
 
-from utils import Util
+from things_cloud.utils import Util
 
 FAKE_TIME = dt.datetime(2021, 11, 1, 21, 0, 59)
 

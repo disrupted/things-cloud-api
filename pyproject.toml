@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "things-cloud-api"
+name = "things-cloud"
 version = "0.1.0"
 description = "Client for Things Cloud API"
 authors = ["disrupted <hi@salomonpopp.me>"]

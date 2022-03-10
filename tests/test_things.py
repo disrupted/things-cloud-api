@@ -1,17 +1,19 @@
 import pytest
-from todo import TodoItem
 
-from things import Destination, create_todo, get_current_index
+from things_cloud import ThingsClient
+from things_cloud.todo import Destination, TodoItem
+
+ACCOUNT = ""  # TODO
+things = ThingsClient(ACCOUNT)
 
 
 @pytest.mark.skip(reason="should put mocks in place")
 def test_create():
-    start_index = 1540
-    current_index = get_current_index(start_index)
-    assert current_index is not None
-    assert current_index > start_index
+    start_index = 123
+    current_idx = things._offset
+    assert current_idx is not None
+    assert current_idx > start_index
     item = TodoItem(title="test_create", destination=Destination.TODAY)
-
-    index = create_todo(current_index, item)
-    assert index is not None
-    assert index == current_index + 1
+    new_idx = things.create(item)
+    assert new_idx is not None
+    assert new_idx == current_idx + 1

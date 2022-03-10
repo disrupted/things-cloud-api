@@ -2,10 +2,9 @@ import datetime as dt
 
 import pytest
 
-from serde import TodoSerde
-from things import Destination
-from todo import Status, TodoItem
-from utils import Util
+from things_cloud.serde import TodoSerde
+from things_cloud.todo import Destination, Status, TodoItem
+from things_cloud.utils import Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
 
@@ -107,13 +106,9 @@ def test_todo_schema_create():
 
 
 def test_create():
-    item = TodoItem.create(
-        123,
-        "test",
-        Destination.TODAY,
-    )
+    item = TodoItem.create("test", Destination.TODAY)
     d = {
-        "index": 123,
+        "index": 0,
         "title": "test",
         "status": Status.TODO,
         "destination": Destination.TODAY,
