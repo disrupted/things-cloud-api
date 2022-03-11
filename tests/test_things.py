@@ -1,7 +1,7 @@
 import pytest
 
 from things_cloud import ThingsClient
-from things_cloud.todo import Destination, TodoItem
+from things_cloud.models.todo import Destination, TodoItem
 
 ACCOUNT = ""  # TODO
 OFFSET = 123

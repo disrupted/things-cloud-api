@@ -2,8 +2,8 @@ import datetime as dt
 
 import pytest
 
-from things_cloud.serde import TodoSerde
-from things_cloud.todo import Destination, Status, TodoItem
+from things_cloud.models.serde import TodoSerde
+from things_cloud.models.todo import Destination, Status, TodoItem
 from things_cloud.utils import Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)

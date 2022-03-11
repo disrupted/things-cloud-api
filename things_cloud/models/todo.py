@@ -6,10 +6,10 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
-from .serde import TodoSerde
-from .utils import Util
+from things_cloud.models.serde import TodoSerde
+from things_cloud.utils import Util
 
-serde = TodoSerde()
+SERDE = TodoSerde()
 
 
 class Destination(int, Enum):
@@ -72,14 +72,14 @@ class TodoItem(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        json_loads = serde.deserialize
-        json_dumps = serde.serialize
+        json_loads = SERDE.deserialize
+        json_dumps = SERDE.serialize
 
     def serialize(self) -> str:
         return self.json(by_alias=True)
 
     def serialize_dict(self) -> dict:
-        return serde.deserialize(self.serialize())
+        return SERDE.deserialize(self.serialize())
 
     @staticmethod
     def create(title: str, destination: Destination) -> TodoItem:
