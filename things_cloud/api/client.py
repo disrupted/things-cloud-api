@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import requests
+import httpx
+from httpx import RequestError, Response
 from loguru import logger
-from requests.exceptions import RequestException
-from requests.models import Response
 
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
@@ -14,21 +13,21 @@ from things_cloud.utils import Util
 
 class ThingsClient:
     def __init__(self, acc: str, initial_offset: int | None = None):
-        self._acc: str = acc
+        self._base_url: str = f"{API_BASE}/history/{acc}"
         if initial_offset:
             self._offset: int = initial_offset
         else:
-            self.__refresh_offset()
+            self.update()
 
     @property
     def offset(self) -> int:
         return self._offset
 
-    def __refresh_offset(self):
+    def update(self):
         self._offset = self.__get_current_index(self._offset)
 
     def create(self, todo: TodoItem) -> int:
-        self.__refresh_offset()
+        self.update()
         todo.index = self._offset + 1
         return self.__create_todo(self._offset, todo)
 
@@ -40,34 +39,21 @@ class ThingsClient:
         item = TodoItem.delete()
         self.__modify_todo(uuid, index, item)
 
-    def __request(
-        self,
-        method: str,
-        endpoint: str,
-        params: dict | None = None,
-        headers: dict | None = None,
-        data: dict | str | None = None,
-    ) -> Response:
-        if headers is None:
-            headers = HEADERS
+    def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
-            response = requests.request(
-                method=method,
-                url=f"{API_BASE}/{endpoint}",
-                params=params,
-                headers=headers,
-                data=data,
-            )
-            logger.debug(f"Status: {response.status_code}")
-            logger.debug(f"Body: {response.content}")
-            return response
-        except RequestException as e:
+            with httpx.Client(base_url=self._base_url, headers=HEADERS) as client:
+                response = client.request(method, endpoint, **kwargs)
+
+                logger.debug("Status: {}", response.status_code)
+                logger.debug("Body: {}", response.content)
+                return response
+        except RequestError as e:
             raise ThingsCloudException from e
 
     def __get_current_index(self, index: int) -> int:
         response = self.__request(
-            method="GET",
-            endpoint=f"history/{self._acc}/items",
+            "GET",
+            "/items",
             params={
                 "start-index": str(index),
             },
@@ -83,24 +69,16 @@ class ThingsClient:
         index: int,
         data: dict | None = None,
     ) -> int:
-        try:
-            response = self.__request(
-                method="POST",
-                endpoint=f"history/{self._acc}/commit",
-                params={
-                    "ancestor-index": str(index),
-                    "_cnt": "1",
-                },
-                headers={
-                    **HEADERS,
-                },
-                data=JsonSerde.dumps(data),
-            )
-            logger.debug(f"Status: {response.status_code}")
-            logger.debug(f"Body: {response.content}")
-            return response.json()["server-head-index"]
-        except RequestException as e:
-            raise ThingsCloudException from e
+        response = self.__request(
+            method="POST",
+            endpoint="/commit",
+            params={
+                "ancestor-index": str(index),
+                "_cnt": "1",
+            },
+            content=JsonSerde.dumps(data),
+        )
+        return response.json()["server-head-index"]
 
     def __create_todo(self, index: int, item: TodoItem) -> int:
         uuid = Util.uuid()
