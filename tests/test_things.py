@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import pytest
 
 from things_cloud.api.client import ThingsClient
