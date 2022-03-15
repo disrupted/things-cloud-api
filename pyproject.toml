@@ -9,7 +9,7 @@ python = "^3.9"
 loguru = "^0.5.3"
 dataclasses-json = "^0.5.4"
 orjson = "^3.6.7"
-pydantic = "^1.8.2"
+pydantic = "^1.9.0"
 shortuuid = "^1.0.1"
 httpx = "^0.22.0"
 
