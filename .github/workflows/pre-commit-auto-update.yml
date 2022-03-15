@@ -27,8 +27,8 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           branch: update/pre-commit-autoupdate
-          title: Auto-update pre-commit hooks
-          commit-message: Auto-update pre-commit hooks
+          title: "chore(deps-dev): auto-update pre-commit hooks"
+          commit-message: "chore(deps-dev): auto-update pre-commit hooks"
           body: |
             Update pre-commit hooks to latest version
           labels: dependencies
