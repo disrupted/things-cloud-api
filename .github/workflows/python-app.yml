@@ -63,36 +63,6 @@ jobs:
         run: |
           poetry run pre-commit run --hook-stage manual mypy --all-files
 
-      # - name: Source virtualenv
-      #   run: source $GITHUB_WORKSPACE/.venv/bin/activate
-
-      # - name: Check pyright
-      #   uses: jakebailey/pyright-action@v1
-      #   with:
-      #     venv-path: ./.venv
-
-      # - name: Check pyright
-      #   uses: jordemort/action-pyright@v1
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      # venv_path: ./.venv
-      # lib: true
-
-      - uses: actions/setup-node@v3.0.0
-
-      - name: Check pyright
-        run: |
-          npm install pyright
-          cd "$GITHUB_WORKSPACE"
-          source ./.venv/bin/activate
-          npx pyright --venv-path ./.venv
-
-      - name: Type completeness
-        run: |
-          cd "$GITHUB_WORKSPACE"
-          source ./.venv/bin/activate
-          npx pyright --verifytypes subclean --outputjson | jq --arg prefix "completeness " '.typeCompleteness.completenessScore * 100 | tostring + "% type completeness"'
-
       - name: Update Python syntax update
         run: |
           poetry run pre-commit run --hook-stage manual pyupgrade --all-files
