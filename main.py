@@ -8,8 +8,6 @@ from things_cloud.models.todo import Destination, TodoItem
 log = get_logger()
 
 ACCOUNT = os.environ["THINGS_ACCOUNT"]
-USER_AGENT = os.environ["THINGS_USER_AGENT"]
-APP_ID = os.environ.get("THINGS_APP_ID", "com.culturedcode.ThingsMac")
 OFFSET = int(os.environ.get("THINGS_OFFSET", 0))
 
 
