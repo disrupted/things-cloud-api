@@ -1,0 +1,98 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.9"
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Get Python version
+        id: python-version
+        run: echo ::set-output name=version::"$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")"
+
+      - name: Run poetry image
+        uses: abatilo/actions-poetry@v2.1.4
+        with:
+          poetry-version: "1.1.12"
+
+      - name: Set poetry virtualenv
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.python-version.outputs.version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        shell: bash
+        run: timeout 10s python -m poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Lint flake8
+        run: |
+          poetry run pre-commit run --hook-stage manual flake8 --all-files --show-diff-on-failure
+
+      - name: Check black
+        run: |
+          poetry run pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
+
+      - name: Check mypy
+        run: |
+          poetry run pre-commit run --hook-stage manual mypy --all-files
+
+      # - name: Source virtualenv
+      #   run: source $GITHUB_WORKSPACE/.venv/bin/activate
+
+      # - name: Check pyright
+      #   uses: jakebailey/pyright-action@v1
+      #   with:
+      #     venv-path: ./.venv
+
+      # - name: Check pyright
+      #   uses: jordemort/action-pyright@v1
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      # venv_path: ./.venv
+      # lib: true
+
+      - uses: actions/setup-node@v3.0.0
+
+      - name: Check pyright
+        run: |
+          npm install pyright
+          cd "$GITHUB_WORKSPACE"
+          source ./.venv/bin/activate
+          npx pyright --venv-path ./.venv
+
+      - name: Type completeness
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          source ./.venv/bin/activate
+          npx pyright --verifytypes subclean --outputjson | jq --arg prefix "completeness " '.typeCompleteness.completenessScore * 100 | tostring + "% type completeness"'
+
+      - name: Update Python syntax update
+        run: |
+          poetry run pre-commit run --hook-stage manual pyupgrade --all-files
+
+      - name: Test pytest
+        run: |
+          poetry run pytest
