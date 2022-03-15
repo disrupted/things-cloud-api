@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import httpx
 from httpx import Request, RequestError, Response
 from loguru import logger

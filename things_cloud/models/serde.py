@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 import json
 from abc import ABC, abstractmethod
@@ -14,11 +12,11 @@ class Serde(ABC):
     type_serializers: dict[type, Callable]
 
     @abstractmethod
-    def serialize():
+    def serialize(self, v, *, default=None) -> str:
         ...
 
     @abstractmethod
-    def deserialize():
+    def deserialize(self, v) -> Any:
         ...
 
 
@@ -63,8 +61,9 @@ class TodoSerde(JsonSerde):
 
     @staticmethod
     def timestamp_rounded(d: dt.datetime | None) -> int | None:
-        if d:
-            return int(d.timestamp())
+        if d is None:
+            return None
+        return int(d.timestamp())
 
 
 class DictSerde(Serde):
@@ -76,7 +75,7 @@ class DictSerde(Serde):
     # def prettydumps(v, *, default=None) -> str:
     #     return JsonSerde.dumps(v, default=default, indent=orjson.OPT_INDENT_2)
 
-    def serialize(self, v) -> str:
+    def serialize(self, v, *, default=None) -> str:
         # for key, value in v.items():
         #     if serializer := self.field_serializers.get(key):
         #         v[key] = serializer(value)

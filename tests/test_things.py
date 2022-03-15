@@ -1,6 +1,6 @@
 import pytest
 
-from things_cloud import ThingsClient
+from things_cloud.api.client import ThingsClient
 from things_cloud.models.todo import Destination, TodoItem
 
 ACCOUNT = ""  # TODO

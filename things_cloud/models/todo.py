@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, time
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -40,30 +40,30 @@ class TodoItem(BaseModel):
     title: str = Field("", alias="tt")
     status: Status = Field(Status.TODO, alias="ss")
     destination: Destination = Field(Destination.INBOX, alias="st")
-    creation_date: Optional[datetime] = Field(None, alias="cd")
-    modification_date: Optional[datetime] = Field(None, alias="md")
-    scheduled_date: Optional[datetime] = Field(None, alias="sr")
-    completion_date: Optional[datetime] = Field(None, alias="sp")
-    tir: Optional[int] = Field(None, alias="tir")
-    due_date: Optional[datetime] = Field(None, alias="dd")
+    creation_date: datetime | None = Field(None, alias="cd")
+    modification_date: datetime | None = Field(None, alias="md")
+    scheduled_date: datetime | None = Field(None, alias="sr")
+    completion_date: datetime | None = Field(None, alias="sp")
+    tir: int | None = Field(None, alias="tir")
+    due_date: datetime | None = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
-    projects: List[Any] = Field(default_factory=list, alias="pr")
-    areas: List[Any] = Field(default_factory=list, alias="ar")
+    projects: list[Any] = Field(default_factory=list, alias="pr")
+    areas: list[Any] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
-    tags: List[Any] = Field(default_factory=list, alias="tg")
+    tags: list[Any] = Field(default_factory=list, alias="tg")
     tp: int = Field(0, alias="tp")
     dds: None = Field(None, alias="dds")
-    rt: List[Any] = Field(default_factory=list, alias="rt")
+    rt: list[Any] = Field(default_factory=list, alias="rt")
     rmd: None = Field(None, alias="rmd")
-    dl: List[Any] = Field(default_factory=list, alias="dl")
+    dl: list[Any] = Field(default_factory=list, alias="dl")
     do: int = Field(0, alias="do")
     lai: None = Field(None, alias="lai")
-    agr: List[Any] = Field(default_factory=list, alias="agr")
+    agr: list[Any] = Field(default_factory=list, alias="agr")
     lt: bool = Field(False, alias="lt")
     icc: int = Field(0, alias="icc")
     ti: int = Field(0, alias="ti")  # position/order of items
-    reminder: Optional[time] = Field(None, alias="ato")
+    reminder: time | None = Field(None, alias="ato")
     icsd: None = Field(None, alias="icsd")
     rp: None = Field(None, alias="rp")
     acrd: None = Field(None, alias="acrd")

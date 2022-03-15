@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from datetime import date, datetime, timedelta, timezone
 
-from shortuuid import ShortUUID
+from shortuuid import ShortUUID  # type: ignore
 
 
 class Util:

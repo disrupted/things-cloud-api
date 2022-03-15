@@ -1,1 +1,1 @@
-from things_cloud.api.client import ThingsClient
+from things_cloud.api.client import ThingsClient  # noqa
