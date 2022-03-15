@@ -1,12 +1,14 @@
 import httpx
 from httpx import Request, RequestError, Response
-from loguru import logger
+from structlog import get_logger
 
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
 from things_cloud.models.serde import JsonSerde
 from things_cloud.models.todo import TodoItem
 from things_cloud.utils import Util
+
+log = get_logger()
 
 
 class ThingsClient:
@@ -30,9 +32,7 @@ class ThingsClient:
 
     @staticmethod
     def log_request(request: Request):
-        logger.debug(
-            "Request: {} {} - Waiting for response", request.method, request.url
-        )
+        log.debug(f"Request: {request.method} {request.url} - Waiting for response")
 
     @staticmethod
     def raise_on_4xx_5xx(response: Response):
@@ -42,14 +42,11 @@ class ThingsClient:
     @staticmethod
     def log_response(response: Response):
         request = response.request
-        logger.debug(
-            "Response: {} {} - Status {}",
-            request.method,
-            request.url,
-            response.status_code,
+        log.debug(
+            f"Response: {request.method} {request.url}", status=response.status_code
         )
         response.read()  # access response body
-        logger.trace("Body: {}", response.content)
+        log.debug("Body", content=response.content)
 
     @property
     def offset(self) -> int:
@@ -88,7 +85,7 @@ class ThingsClient:
         if response and response.status_code == 200:
             return response.json()["current-item-index"]
         else:
-            logger.error("Error getting current index", response)
+            log.error("Error getting current index", response=response)
             raise ThingsCloudException
 
     def __commit(
@@ -110,20 +107,20 @@ class ThingsClient:
     def __create_todo(self, index: int, item: TodoItem) -> int:
         uuid = Util.uuid()
         data = {uuid: {"t": 0, "e": "Task6", "p": item.serialize_dict()}}
-        logger.debug(data)
+        log.debug("", data=data)
 
         try:
             return self.__commit(index, data)
         except ThingsCloudException as e:
-            logger.error("Error creating todo")
+            log.error("Error creating todo")
             raise e
 
     def __modify_todo(self, uuid: str, index: int, item: TodoItem) -> int:
         data = {uuid: {"t": 1, "e": "Task6", "p": item.serialize_dict()}}
-        logger.debug(data)
+        log.debug("", data=data)
 
         try:
             return self.__commit(index, data)
         except ThingsCloudException as e:
-            logger.error("Error modifying todo")
+            log.error("Error modifying todo")
             raise e
