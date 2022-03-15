@@ -25,6 +25,7 @@ repos:
     hooks:
       - id: mypy
         args: ["--pretty"]
+        additional_dependencies: [types-python-dateutil, types-freezegun]
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
