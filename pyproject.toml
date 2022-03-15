@@ -6,7 +6,7 @@ authors = ["disrupted <hi@salomonpopp.me>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-loguru = "^0.5.3"
+loguru = "^0.6.0"
 dataclasses-json = "^0.5.4"
 orjson = "^3.6.7"
 pydantic = "^1.9.0"
