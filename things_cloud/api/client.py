@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import httpx
-from httpx import RequestError, Response
+from httpx import Request, RequestError, Response
 from loguru import logger
 
 from things_cloud.api.const import API_BASE, HEADERS
@@ -14,10 +14,39 @@ from things_cloud.utils import Util
 class ThingsClient:
     def __init__(self, acc: str, initial_offset: int | None = None):
         self._base_url: str = f"{API_BASE}/history/{acc}"
+        self._client = httpx.Client(
+            base_url=self._base_url,
+            headers=HEADERS,
+            event_hooks={
+                "request": [self.log_request],
+                "response": [self.log_response],
+            },
+        )
         if initial_offset:
             self._offset: int = initial_offset
         else:
             self.update()
+
+    def __del__(self):
+        self._client.close()
+
+    @staticmethod
+    def log_request(request: Request):
+        logger.debug(
+            "Request: {} {} - Waiting for response", request.method, request.url
+        )
+
+    @staticmethod
+    def log_response(response: Response):
+        request = response.request
+        logger.debug(
+            "Response: {} {} - Status {}",
+            request.method,
+            request.url,
+            response.status_code,
+        )
+        response.read()  # access response body
+        logger.trace("Body: {}", response.content)
 
     @property
     def offset(self) -> int:
@@ -41,12 +70,7 @@ class ThingsClient:
 
     def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
-            with httpx.Client(base_url=self._base_url, headers=HEADERS) as client:
-                response = client.request(method, endpoint, **kwargs)
-
-                logger.debug("Status: {}", response.status_code)
-                logger.debug("Body: {}", response.content)
-                return response
+            return self._client.request(method, endpoint, **kwargs)
         except RequestError as e:
             raise ThingsCloudException from e
 
