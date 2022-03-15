@@ -12,7 +12,23 @@ Since there's no documentation, I've been analyzing the requests made by the Mac
 
 Contributions are welcome to translate the rest of the fields.
 
-## Progress
+## Usage
+
+```python
+from things_cloud import ThingsClient
+
+ACCOUNT = "<your-account-id>"
+# current head index of Cloud database (if you know it)
+OFFSET = 1234
+# otherwise
+OFFSET = None
+
+things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
+todo = TodoItem(title="Write postcard to grandma", destination=Destination.INBOX)
+things.create(todo) # returns new head index
+```
+
+### Progress
 
 - [x] Todos
   - [x] create
@@ -23,3 +39,11 @@ Contributions are welcome to translate the rest of the fields.
 - [ ] Areas
   - [ ] Today
   - [ ] Inbox
+
+### Similar projects
+
+none that I know of
+
+### Disclaimer
+
+This project is not affiliated with Cultured Code. They make a fantastic product. and I hope they will provide an official way of interacting with the API one day. If you want to learn more about it, visit [culturedcode.com](https://culturedcode.com/things/).
