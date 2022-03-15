@@ -19,7 +19,7 @@ class ThingsClient:
             headers=HEADERS,
             event_hooks={
                 "request": [self.log_request],
-                "response": [self.log_response],
+                "response": [self.raise_on_4xx_5xx, self.log_response],
             },
         )
         if initial_offset:
@@ -35,6 +35,11 @@ class ThingsClient:
         logger.debug(
             "Request: {} {} - Waiting for response", request.method, request.url
         )
+
+    @staticmethod
+    def raise_on_4xx_5xx(response: Response):
+        """Raises a HTTPStatusError on 4xx and 5xx responses."""
+        response.raise_for_status()
 
     @staticmethod
     def log_response(response: Response):
