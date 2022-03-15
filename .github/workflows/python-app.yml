@@ -63,7 +63,7 @@ jobs:
         run: |
           poetry run pre-commit run --hook-stage manual mypy --all-files
 
-      - name: Update Python syntax update
+      - name: Update Python syntax
         run: |
           poetry run pre-commit run --hook-stage manual pyupgrade --all-files
 
