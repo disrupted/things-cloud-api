@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 import json
 from abc import ABC, abstractmethod
