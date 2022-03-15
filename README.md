@@ -46,4 +46,4 @@ none that I know of
 
 ### Disclaimer
 
-This project is not affiliated with Cultured Code. They make a fantastic product. and I hope they will provide an official way of interacting with the API one day. If you want to learn more about it, visit [culturedcode.com](https://culturedcode.com/things/).
+This project is not affiliated with Cultured Code. They make a fantastic product, and I hope they will provide an official way of interacting with the API one day. If you want to learn more about it, visit [culturedcode.com](https://culturedcode.com/things/).
