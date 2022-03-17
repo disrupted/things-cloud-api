@@ -16,6 +16,7 @@ Contributions are welcome to translate the rest of the fields.
 
 ```python
 from things_cloud import ThingsClient
+from things_cloud.models.todo import Destination, TodoItem
 
 ACCOUNT = "<your-account-id>"
 # current head index of Cloud database (if you know it)
@@ -24,15 +25,24 @@ OFFSET = 1234
 OFFSET = None
 
 things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
-todo = TodoItem(title="Write postcard to grandma", destination=Destination.INBOX)
-things.create(todo) # returns new head index
+todo = TodoItem.create("Try out Things Cloud", Destination.INBOX)
+
+# send todo to Things Cloud
+uuid = things.create(todo) # returns unique ID of new item
+
+# schedule todo for today
+things.edit(uuid, TodoItem.set_today())
+
+sleep(20)
+# mark todo as complete
+things.edit(uuid, TodoItem.complete())
 ```
 
 ### Progress
 
 - [x] Todos
   - [x] create
-  - [ ] edit
+  - [x] edit
   - [ ] list
 - [ ] Projects
   - [ ] create
