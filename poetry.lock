@@ -440,6 +440,17 @@ dotenv = ["python-dotenv (>=0.10.4)"]
 email = ["email-validator (>=1.0.3)"]
 
 [[package]]
+name = "pydantic-property"
+version = "0.0.1"
+description = "Property descriptors for Pydantic"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pydantic = ">=1.5.1"
+
+[[package]]
 name = "pyflakes"
 version = "2.4.0"
 description = "passive checker of Python programs"
@@ -656,7 +667,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "63ee6a7c975f7f9bf6c6c1db18444dcba45944f4deb40946ece623533b02885b"
+content-hash = "496a708a4c4a1e54828cb42315f16fc92fc252da0e1bdf54a3eba36f348de712"
 
 [metadata.files]
 anyio = [
@@ -915,6 +926,10 @@ pydantic = [
     {file = "pydantic-1.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:2cc6a4cb8a118ffec2ca5fcb47afbacb4f16d0ab8b7350ddea5e8ef7bcc53a16"},
     {file = "pydantic-1.9.0-py3-none-any.whl", hash = "sha256:085ca1de245782e9b46cefcf99deecc67d418737a1fd3f6a4f511344b613a5b3"},
     {file = "pydantic-1.9.0.tar.gz", hash = "sha256:742645059757a56ecd886faf4ed2441b9c0cd406079c2b4bee51bcc3fbcd510a"},
+]
+pydantic-property = [
+    {file = "pydantic_property-0.0.1-py3-none-any.whl", hash = "sha256:724d17dcae2c34a2b6c2d9f1d3eea93262234833a53ab878e05ee4e38b00808c"},
+    {file = "pydantic_property-0.0.1.tar.gz", hash = "sha256:a91aa6554c8a96a21e807076c8710aeeccc065298cdb6bc63b1ae413c029498d"},
 ]
 pyflakes = [
     {file = "pyflakes-2.4.0-py2.py3-none-any.whl", hash = "sha256:3bb3a3f256f4b7968c9c788781e4ff07dce46bdf12339dcda61053375426ee2e"},

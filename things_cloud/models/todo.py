@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
+from pydantic_property import PropertyModel, field_property
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -35,7 +36,8 @@ class Note(BaseModel):
         allow_population_by_field_name = True
 
 
-class TodoItem(BaseModel):
+
+class TodoItem(PropertyModel):
     index: int = Field(0, alias="ix")
     title: str = Field("", alias="tt")
     status: Status = Field(Status.TODO, alias="ss")
@@ -48,7 +50,8 @@ class TodoItem(BaseModel):
     due_date: datetime | None = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
-    projects: list[str] = Field(default_factory=list, alias="pr")
+    # projects: list[str] = Field(default_factory=list, alias="pr")
+    projects: list[str] = field_property("_projects", default_factory=list, alias="pr")
     areas: list[Any] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
     tags: list[Any] = Field(default_factory=list, alias="tg")
@@ -82,31 +85,26 @@ class TodoItem(BaseModel):
         return SERDE.deserialize(self.serialize())
 
     @staticmethod
-    def create(
-        title: str,
-        destination: Destination | None = None,
-        project: str | None = None,
-        area: str | None = None,
-    ) -> TodoItem:
-        assert (
-            bool(destination is None) ^ bool(project is None) ^ bool(area is None)
-        ), "destination, project and area are mutually exclusive"
-
-        kwargs: dict[str, Any] = {}
-        if destination:
-            kwargs["destination"] = destination
-        if project:
-            kwargs["projects"] = [project]
-        if area:
-            kwargs["areas"] = [area]
-
+    def create(title: str, destination: Destination) -> TodoItem:
         now = Util.now()
         return TodoItem(
             title=title,
+            destination=destination,
             creation_date=now,
             modification_date=now,
-            **kwargs,
         )
+
+    @projects.getter
+    def project(self) -> str | None:
+        projects = getattr(self, "_projects")
+        return projects if projects else None
+
+    @project.setter
+    def project(self, project: str) -> None:
+        self.areas.clear()
+        self._projects = [project]
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.SOMEDAY
 
     @staticmethod
     def create_project(title: str) -> TodoItem:

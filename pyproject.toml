@@ -12,6 +12,7 @@ pydantic = "^1.9.0"
 shortuuid = "^1.0.1"
 httpx = "^0.22.0"
 structlog = "^21.5.0"
+pydantic-property = "^0.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.0"
