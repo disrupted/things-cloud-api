@@ -106,12 +106,12 @@ def test_todo_schema_create():
 
 
 def test_create():
-    item = TodoItem.create("test", Destination.TODAY)
+    item = TodoItem.create("test", Destination.ANYTIME)
     d = {
         "index": 0,
         "title": "test",
         "status": Status.TODO,
-        "destination": Destination.TODAY,
+        "destination": Destination.ANYTIME,
         "creation_date": FAKE_TIME,
         "modification_date": FAKE_TIME,
         "scheduled_date": None,

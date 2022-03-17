@@ -15,7 +15,7 @@ SERDE = TodoSerde()
 class Destination(int, Enum):
     # destination: {0: inbox, 1: today/evening, 2: someday}
     INBOX = 0
-    TODAY = 1
+    ANYTIME = 1
     SOMEDAY = 2
 
 
@@ -43,8 +43,8 @@ class TodoItem(BaseModel):
     creation_date: datetime | None = Field(None, alias="cd")
     modification_date: datetime | None = Field(None, alias="md")
     scheduled_date: datetime | None = Field(None, alias="sr")
+    tir: datetime | None = Field(None, alias="tir")  # same as scheduled_date?
     completion_date: datetime | None = Field(None, alias="sp")
-    tir: int | None = Field(None, alias="tir")
     due_date: datetime | None = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
@@ -52,7 +52,7 @@ class TodoItem(BaseModel):
     areas: list[Any] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
     tags: list[Any] = Field(default_factory=list, alias="tg")
-    tp: int = Field(0, alias="tp")
+    tp: int = Field(0, alias="tp")  # 0: todo, 1: project?
     dds: None = Field(None, alias="dds")
     rt: list[Any] = Field(default_factory=list, alias="rt")
     rmd: None = Field(None, alias="rmd")
@@ -155,3 +155,24 @@ class TodoItem(BaseModel):
             modification_date=Util.now(),
         )
         return item.copy(include={"is_evening", "modification_date"})
+
+    @staticmethod
+    def set_destination(destination: Destination) -> TodoItem:
+        item = TodoItem(
+            destination=destination,
+            modification_date=Util.now(),
+        )
+        return item.copy(include={"destination", "modification_date"})
+
+    @staticmethod
+    def set_today() -> TodoItem:
+        today = Util.today()
+        item = TodoItem(
+            destination=Destination.ANYTIME,
+            scheduled_date=today,
+            tir=today,
+            modification_date=Util.now(),
+        )
+        return item.copy(
+            include={"destination", "scheduled_date", "tir", "modification_date"}
+        )
