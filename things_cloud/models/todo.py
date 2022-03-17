@@ -81,6 +81,28 @@ class TodoItem(BaseModel):
     def serialize_dict(self) -> dict:
         return SERDE.deserialize(self.serialize())
 
+    @property
+    def project(self) -> str | None:
+        return self.projects[0] if self.projects else None
+
+    # HACK: ugly java-esque workaround because pydantic doesn't support property setters :(
+    def set_project(self, project: str) -> None:
+        self.areas.clear()
+        self.projects = [project]
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.SOMEDAY
+
+    @property
+    def area(self) -> str | None:
+        return self.areas[0] if self.areas else None
+
+    # HACK
+    def set_area(self, area: str) -> None:
+        self.projects.clear()
+        self.areas = [area]
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.SOMEDAY
+
     @staticmethod
     def create(title: str, destination: Destination) -> TodoItem:
         now = Util.now()
@@ -90,17 +112,6 @@ class TodoItem(BaseModel):
             creation_date=now,
             modification_date=now,
         )
-
-    @property
-    def project(self) -> str | None:
-        return self.projects[0] if self.projects else None
-
-    # ugly java-esque workaround because pydantic doesn't support property setters :(
-    def set_project(self, project: str) -> None:
-        self.areas.clear()
-        self.projects = [project]
-        if self.destination == Destination.INBOX:
-            self.destination = Destination.SOMEDAY
 
     @staticmethod
     def create_project(title: str) -> TodoItem:
