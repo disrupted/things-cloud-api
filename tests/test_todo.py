@@ -290,3 +290,21 @@ def test_set_evening():
             "sb": 1,
         }
     )
+
+
+def test_set_project():
+    todo = TodoItem.create("test task", Destination.INBOX)
+    todo.set_project("test-project")
+    assert todo.projects == ["test-project"]
+    assert todo.project == "test-project"
+    assert todo.areas == []
+    assert todo.destination == Destination.SOMEDAY
+
+
+def test_set_area():
+    todo = TodoItem.create("test task", Destination.INBOX)
+    todo.set_area("test-area")
+    assert todo.areas == ["test-area"]
+    assert todo.area == "test-area"
+    assert todo.projects == []
+    assert todo.destination == Destination.SOMEDAY
