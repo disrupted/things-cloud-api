@@ -44,8 +44,10 @@ things.edit(uuid, TodoItem.complete())
   - [x] create
   - [x] edit
   - [ ] list
-- [ ] Projects
-  - [ ] create
+  - [ ] note
+- [x] Projects
+  - [x] create
+  - [x] edit
 - [ ] Areas
   - [ ] Today
   - [ ] Inbox

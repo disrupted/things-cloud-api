@@ -48,7 +48,7 @@ class TodoItem(BaseModel):
     due_date: datetime | None = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
-    projects: list[Any] = Field(default_factory=list, alias="pr")
+    projects: list[str] = Field(default_factory=list, alias="pr")
     areas: list[Any] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
     tags: list[Any] = Field(default_factory=list, alias="tg")
@@ -81,6 +81,28 @@ class TodoItem(BaseModel):
     def serialize_dict(self) -> dict:
         return SERDE.deserialize(self.serialize())
 
+    @property
+    def project(self) -> str | None:
+        return self.projects[0] if self.projects else None
+
+    # HACK: ugly java-esque workaround because pydantic doesn't support property setters :(
+    def set_project(self, project: str) -> None:
+        self.areas.clear()
+        self.projects = [project]
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.SOMEDAY
+
+    @property
+    def area(self) -> str | None:
+        return self.areas[0] if self.areas else None
+
+    # HACK
+    def set_area(self, area: str) -> None:
+        self.projects.clear()
+        self.areas = [area]
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.SOMEDAY
+
     @staticmethod
     def create(title: str, destination: Destination) -> TodoItem:
         now = Util.now()
@@ -89,6 +111,18 @@ class TodoItem(BaseModel):
             destination=destination,
             creation_date=now,
             modification_date=now,
+        )
+
+    @staticmethod
+    def create_project(title: str) -> TodoItem:
+        now = Util.now()
+        return TodoItem(
+            title=title,
+            destination=Destination.ANYTIME,
+            creation_date=now,
+            modification_date=now,
+            is_project=True,
+            tp=1,
         )
 
     @staticmethod
