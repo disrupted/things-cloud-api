@@ -60,6 +60,9 @@ class ThingsClient:
         item.index = self._offset + 1
         return self.__create_todo(self._offset, item)
 
+    def edit(self, uuid: str, item: TodoItem) -> int:
+        return self.__modify_todo(uuid, self._offset, item)
+
     def complete_todo(self, uuid: str, index: int):
         item = TodoItem.complete()
         self.__modify_todo(uuid, index, item)

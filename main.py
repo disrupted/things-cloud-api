@@ -19,6 +19,8 @@ def main():
     uuid = things.create(todo)
     log.debug("created todo", uuid=uuid)
 
+    things.edit(uuid, TodoItem.complete())
+
 
 if __name__ == "__main__":
     main()
