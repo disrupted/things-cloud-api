@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
-from pydantic_property import PropertyModel, field_property
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -36,8 +35,7 @@ class Note(BaseModel):
         allow_population_by_field_name = True
 
 
-
-class TodoItem(PropertyModel):
+class TodoItem(BaseModel):
     index: int = Field(0, alias="ix")
     title: str = Field("", alias="tt")
     status: Status = Field(Status.TODO, alias="ss")
@@ -50,8 +48,7 @@ class TodoItem(PropertyModel):
     due_date: datetime | None = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
-    # projects: list[str] = Field(default_factory=list, alias="pr")
-    projects: list[str] = field_property("_projects", default_factory=list, alias="pr")
+    projects: list[str] = Field(default_factory=list, alias="pr")
     areas: list[Any] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
     tags: list[Any] = Field(default_factory=list, alias="tg")
@@ -94,15 +91,14 @@ class TodoItem(PropertyModel):
             modification_date=now,
         )
 
-    @projects.getter
+    @property
     def project(self) -> str | None:
-        projects = getattr(self, "_projects")
-        return projects if projects else None
+        return self.projects[0] if self.projects else None
 
-    @project.setter
-    def project(self, project: str) -> None:
+    # ugly java-esque workaround because pydantic doesn't support property setters :(
+    def set_project(self, project: str) -> None:
         self.areas.clear()
-        self._projects = [project]
+        self.projects = [project]
         if self.destination == Destination.INBOX:
             self.destination = Destination.SOMEDAY
 
