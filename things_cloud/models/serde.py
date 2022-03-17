@@ -51,6 +51,7 @@ class TodoSerde(JsonSerde):
     field_serializers: dict[str, Callable] = {
         "sb": lambda v: int(v),
         "sr": lambda d: TodoSerde.timestamp_rounded(d),
+        "tir": lambda d: TodoSerde.timestamp_rounded(d),
         "dd": lambda d: TodoSerde.timestamp_rounded(d),
     }
 
