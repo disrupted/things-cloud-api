@@ -145,6 +145,46 @@ def test_create():
     assert item.dict() == d
 
 
+def test_create_project():
+    item = TodoItem.create_project("test project")
+    d = {
+        "index": 0,
+        "title": "test project",
+        "status": Status.TODO,
+        "destination": Destination.ANYTIME,
+        "creation_date": FAKE_TIME,
+        "modification_date": FAKE_TIME,
+        "scheduled_date": None,
+        "completion_date": None,
+        "acrd": None,
+        "agr": [],
+        "areas": [],
+        "reminder": None,
+        "due_date": None,
+        "dds": None,
+        "dl": [],
+        "do": 0,
+        "icc": 0,
+        "is_project": True,
+        "icsd": None,
+        "lai": None,
+        "lt": False,
+        "note": {"ch": 0, "t": 0, "value": ""},
+        "projects": [],
+        "rmd": None,
+        "rp": None,
+        "rr": None,
+        "rt": [],
+        "is_evening": 0,
+        "tags": [],
+        "ti": 0,
+        "tir": None,
+        "tp": 1,
+        "in_trash": False,
+    }
+    assert item.dict() == d
+
+
 def test_todo():
     item = TodoItem.todo()
     assert item.dict() == {

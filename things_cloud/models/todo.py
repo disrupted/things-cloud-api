@@ -92,6 +92,18 @@ class TodoItem(BaseModel):
         )
 
     @staticmethod
+    def create_project(title: str) -> TodoItem:
+        now = Util.now()
+        return TodoItem(
+            title=title,
+            destination=Destination.ANYTIME,
+            creation_date=now,
+            modification_date=now,
+            is_project=True,
+            tp=1,
+        )
+
+    @staticmethod
     def todo() -> TodoItem:
         item = TodoItem(
             status=Status.TODO, modification_date=Util.now(), completion_date=None
