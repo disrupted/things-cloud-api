@@ -16,7 +16,7 @@ Contributions are welcome to translate the rest of the fields.
 
 ```python
 from things_cloud import ThingsClient
-from things_cloud.models.todo import Destination, TodoItem
+from things_cloud.models import Destination, TodoItem
 
 ACCOUNT = "<your-account-id>"
 # current head index of Cloud database (if you know it)

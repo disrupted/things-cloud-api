@@ -4,7 +4,7 @@ from time import sleep
 from structlog import get_logger
 
 from things_cloud import ThingsClient
-from things_cloud.models.todo import Destination, TodoItem
+from things_cloud.models import Destination, TodoItem
 
 log = get_logger()
 
