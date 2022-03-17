@@ -36,4 +36,10 @@ def test_offset_date():
 
 
 # TODO: test_as_timestamp
-# TODO: test_uuid
+
+
+def test_uuid():
+    uuid = Util.uuid()
+    assert len(uuid) == 22
+    assert uuid.isalnum()
+    assert uuid != Util.uuid()
