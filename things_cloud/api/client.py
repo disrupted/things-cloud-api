@@ -55,10 +55,10 @@ class ThingsClient:
     def update(self):
         self._offset = self.__get_current_index(self._offset)
 
-    def create(self, todo: TodoItem) -> int:
+    def create(self, item: TodoItem) -> str:
         self.update()
-        todo.index = self._offset + 1
-        return self.__create_todo(self._offset, todo)
+        item.index = self._offset + 1
+        return self.__create_todo(self._offset, item)
 
     def complete_todo(self, uuid: str, index: int):
         item = TodoItem.complete()
@@ -104,13 +104,14 @@ class ThingsClient:
         )
         return response.json()["server-head-index"]
 
-    def __create_todo(self, index: int, item: TodoItem) -> int:
+    def __create_todo(self, index: int, item: TodoItem) -> str:
         uuid = Util.uuid()
         data = {uuid: {"t": 0, "e": "Task6", "p": item.serialize_dict()}}
         log.debug("", data=data)
 
         try:
-            return self.__commit(index, data)
+            self._offset = self.__commit(index, data)
+            return uuid
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e

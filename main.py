@@ -16,8 +16,8 @@ def main():
     things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
     log.debug("current index", offset=things.offset)
     todo = TodoItem(title="HELLO WORLD", destination=Destination.INBOX)
-    idx = things.create(todo)
-    log.debug("new index", index=idx)
+    uuid = things.create(todo)
+    log.debug("created todo", uuid=uuid)
 
 
 if __name__ == "__main__":
