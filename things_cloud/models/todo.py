@@ -83,17 +83,22 @@ class TodoItem(BaseModel):
 
     @staticmethod
     def create(
-        title: str, destination: Destination | None = None, project: str | None = None
+        title: str,
+        destination: Destination | None = None,
+        project: str | None = None,
+        area: str | None = None,
     ) -> TodoItem:
-        assert bool(destination is None) ^ bool(
-            project is None
-        ), "destination and project are mutually exclusive"
+        assert (
+            bool(destination is None) ^ bool(project is None) ^ bool(area is None)
+        ), "destination, project and area are mutually exclusive"
 
         kwargs: dict[str, Any] = {}
         if destination:
             kwargs["destination"] = destination
         if project:
             kwargs["projects"] = [project]
+        if area:
+            kwargs["areas"] = [area]
 
         now = Util.now()
         return TodoItem(
