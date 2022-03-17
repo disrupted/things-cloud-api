@@ -48,7 +48,7 @@ class TodoItem(BaseModel):
     due_date: datetime | None = Field(None, alias="dd")
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
-    projects: list[Any] = Field(default_factory=list, alias="pr")
+    projects: list[str] = Field(default_factory=list, alias="pr")
     areas: list[Any] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
     tags: list[Any] = Field(default_factory=list, alias="tg")
@@ -82,13 +82,25 @@ class TodoItem(BaseModel):
         return SERDE.deserialize(self.serialize())
 
     @staticmethod
-    def create(title: str, destination: Destination) -> TodoItem:
+    def create(
+        title: str, destination: Destination | None = None, project: str | None = None
+    ) -> TodoItem:
+        assert bool(destination is None) ^ bool(
+            project is None
+        ), "destination and project are mutually exclusive"
+
+        kwargs: dict[str, Any] = {}
+        if destination:
+            kwargs["destination"] = destination
+        if project:
+            kwargs["projects"] = [project]
+
         now = Util.now()
         return TodoItem(
             title=title,
-            destination=destination,
             creation_date=now,
             modification_date=now,
+            **kwargs,
         )
 
     @staticmethod
