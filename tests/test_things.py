@@ -12,7 +12,7 @@ things = ThingsClient(ACCOUNT, initial_offset=123)
 def test_create():
     start_idx = things.offset
     assert start_idx == OFFSET
-    item = TodoItem(title="test_create", destination=Destination.TODAY)
+    item = TodoItem(title="test_create", destination=Destination.ANYTIME)
     new_idx = things.create(item)
     assert new_idx is not None
     assert new_idx == start_idx + 1

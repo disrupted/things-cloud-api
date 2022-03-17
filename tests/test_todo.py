@@ -106,12 +106,12 @@ def test_todo_schema_create():
 
 
 def test_create():
-    item = TodoItem.create("test", Destination.TODAY)
+    item = TodoItem.create("test", Destination.ANYTIME)
     d = {
         "index": 0,
         "title": "test",
         "status": Status.TODO,
-        "destination": Destination.TODAY,
+        "destination": Destination.ANYTIME,
         "creation_date": FAKE_TIME,
         "modification_date": FAKE_TIME,
         "scheduled_date": None,
@@ -232,14 +232,21 @@ def test_clear_reminder():
 
 
 def test_set_evening():
+    scheduled_date = Util.today()
     item = TodoItem.set_evening()
     assert item.dict() == {
+        "destination": Destination.ANYTIME,
+        "scheduled_date": scheduled_date,
+        "tir": scheduled_date,
         "is_evening": True,
         "modification_date": FAKE_TIME,
     }
     assert item.json(by_alias=True) == TodoSerde.prettydumps(
         {
+            "st": 1,
             "md": FAKE_TIME.timestamp(),
+            "sr": int(scheduled_date.timestamp()),
+            "tir": int(scheduled_date.timestamp()),
             "sb": 1,
         }
     )
