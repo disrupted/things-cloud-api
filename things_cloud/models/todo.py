@@ -13,7 +13,7 @@ SERDE = TodoSerde()
 
 
 class Destination(int, Enum):
-    # destination: {0: inbox, 1: today/evening, 2: someday}
+    # destination: {0: inbox, 1: anytime/today/evening, 2: someday}
     INBOX = 0
     ANYTIME = 1
     SOMEDAY = 2
@@ -150,11 +150,23 @@ class TodoItem(BaseModel):
 
     @staticmethod
     def set_evening() -> TodoItem:
+        today = Util.today()
         item = TodoItem(
+            destination=Destination.ANYTIME,
+            scheduled_date=today,
+            tir=today,
             is_evening=1,
             modification_date=Util.now(),
         )
-        return item.copy(include={"is_evening", "modification_date"})
+        return item.copy(
+            include={
+                "destination",
+                "scheduled_date",
+                "tir",
+                "is_evening",
+                "modification_date",
+            }
+        )
 
     @staticmethod
     def set_destination(destination: Destination) -> TodoItem:
