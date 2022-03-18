@@ -14,10 +14,6 @@ class User:
     def id(self) -> int:
         return self._id
 
-    @id.setter
-    def id(self, id: int):
-        self._id = id
-
     @property
     def area(self) -> str:
         return self._areas[0]
@@ -28,7 +24,7 @@ class User:
 
 
 user = User(1, "disrupted", ":supersecret:")
-user.id = 999
+# user.id = 999 # not allowed
 user.area = "area51"
 
 # basic dict conversion
