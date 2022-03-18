@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections import deque
 from datetime import datetime, time
 from enum import Enum
-from typing import Any
+from typing import Any, Deque
 
 import cattrs
 from attr import Factory
-from attrs import define, field
+from attrs import asdict, define, field
 from cattrs.gen import make_dict_unstructure_fn, override
 
 from things_cloud.models.serde import TodoSerde
@@ -39,46 +38,50 @@ class Note:
 
 @define
 class TodoItem:
-    index: int = 0
-    title: str = ""
-    status: Status = Status.TODO
+    index: int = field(default=0)
+    title: str = field(default="")
+    status: Status = field(default=Status.TODO)
     destination: Destination = field(default=Destination.INBOX)
-    creation_date: datetime | None = None
-    modification_date: datetime | None = None
-    scheduled_date: datetime | None = None
-    tir: datetime | None = None  # same as scheduled_date?
-    completion_date: datetime | None = None
-    due_date: datetime | None = None
-    in_trash: bool = False
-    is_project: bool = False
-    projects: list[str] = []
-    areas: list[str] = []
+    creation_date: datetime | None = field(default=None)
+    modification_date: datetime | None = field(default=None)
+    scheduled_date: datetime | None = field(default=None)
+    tir: datetime | None = field(default=None)  # same as scheduled_date?
+    completion_date: datetime | None = field(default=None)
+    due_date: datetime | None = field(default=None)
+    in_trash: bool = field(default=False)
+    is_project: bool = field(default=False)
+    projects: list[str] = field(factory=list)
+    areas: list[str] = field(factory=list)
     is_evening: bool = field(default=False, converter=int)
-    tags: list[Any] = []
-    tp: int = 0  # 0: todo, 1: project?
-    dds: None = None
-    rt: list[Any] = []
-    rmd: None = None
-    dl: list[Any] = []
-    do: int = 0
-    lai: None = None
-    agr: list[Any] = []
-    lt: bool = False
-    icc: int = 0
-    ti: int = 0  # position/order of items
-    reminder: time | None = None
-    icsd: None = None
-    rp: None = None
-    acrd: None = None
-    rr: None = None
+    tags: list[Any] = field(factory=list)
+    tp: int = field(default=0)  # 0: todo, 1: project?
+    dds: None = field(default=None)
+    rt: list[Any] = field(factory=list)
+    rmd: None = field(default=None)
+    dl: list[Any] = field(factory=list)
+    do: int = field(default=0)
+    lai: None = field(default=None)
+    agr: list[Any] = field(factory=list)
+    lt: bool = field(default=False)
+    icc: int = field(default=0)
+    ti: int = field(default=0)  # position/order of items
+    reminder: time | None = field(default=None)
+    icsd: None = field(default=None)
+    rp: None = field(default=None)
+    acrd: None = field(default=None)
+    rr: None = field(default=None)
     note: Note = field(factory=Note)
-    _changes = deque()
+    _changes = Deque()
 
     # def serialize(self) -> str:
     #     return self.json(by_alias=True)
 
     # def serialize_dict(self) -> dict:
     #     return SERDE.deserialize(self.serialize())
+
+    @property
+    def changes(self) -> set:
+        return set(self._changes)
 
     def modify(self) -> None:
         self.modification_date = Util.now()
@@ -137,8 +140,8 @@ class TodoItem:
             tp=1,
         )
 
-    def find_changed(self) -> deque[str]:
-        d = deque()
+    def find_changed(self) -> Deque[str]:
+        d = Deque()
         for attribute in self.__attrs_attrs__:  # type: ignore
             value = getattr(self, attribute.name)
             if value != attribute.default:
@@ -160,7 +163,7 @@ class TodoItem:
     def complete(self) -> None:
         self.status = Status.COMPLETE
         self._changes.append("status")
-        self.completion_date = None
+        self.completion_date = Util.now()
         self._changes.append("completion_date")
         self.modify()
 
@@ -290,6 +293,12 @@ todo_unst_hook = make_dict_unstructure_fn(
 
 converter.register_unstructure_hook(TodoItem, todo_unst_hook)
 
+converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 
-def serialize_dict(todo: TodoItem) -> dict:
-    return converter.unstructure(todo)
+
+def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
+    d = asdict(todo)
+    if keys:
+        # filter allowed keys
+        d = {k: v for k, v in d.items() if k in keys}
+    return converter.unstructure(d)
