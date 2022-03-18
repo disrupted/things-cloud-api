@@ -1,9 +1,10 @@
 import datetime as dt
 
 import pytest
+from attrs import asdict
 
 from things_cloud.models.serde import TodoSerde
-from things_cloud.models.todo import Destination, Status, TodoItem
+from things_cloud.models.todo import Destination, Status, TodoItem, serialize_dict
 from things_cloud.utils import Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
@@ -51,7 +52,7 @@ def test_todo_schema_create():
         "icsd": None,
         "lai": None,
         "lt": False,
-        "note": {"ch": 0, "t": 0, "value": ""},
+        "note": {"_t": "tx", "ch": 0, "t": 0, "v": ""},
         "projects": [],
         "rmd": None,
         "rp": None,
@@ -68,11 +69,11 @@ def test_todo_schema_create():
     d_alias = {
         "ix": 1,
         "tt": "test",
-        "st": Destination.INBOX,
+        "st": 0,
         "cd": FAKE_TIME,
         "md": FAKE_TIME,
         "sr": None,
-        "ss": Status.TODO,
+        "ss": 0,
         "acrd": None,
         "agr": [],
         "ar": [],
@@ -86,7 +87,7 @@ def test_todo_schema_create():
         "icsd": None,
         "lai": None,
         "lt": False,
-        "nt": {"ch": 0, "t": 0, "v": ""},
+        "nt": {"_t": "tx", "ch": 0, "t": 0, "v": ""},
         "pr": [],
         "rmd": None,
         "rp": None,
@@ -101,8 +102,8 @@ def test_todo_schema_create():
         "tr": False,
     }
 
-    assert item.dict() == d
-    assert item.dict(by_alias=True) == d_alias
+    assert asdict(item) == d
+    assert serialize_dict(item) == d_alias
 
 
 def test_create():
