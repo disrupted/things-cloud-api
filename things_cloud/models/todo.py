@@ -49,7 +49,7 @@ class TodoItem(BaseModel):
     in_trash: bool = Field(False, alias="tr")
     is_project: bool = Field(False, alias="icp")
     projects: list[str] = Field(default_factory=list, alias="pr")
-    areas: list[Any] = Field(default_factory=list, alias="ar")
+    areas: list[str] = Field(default_factory=list, alias="ar")
     is_evening: bool = Field(False, alias="sb")
     tags: list[Any] = Field(default_factory=list, alias="tg")
     tp: int = Field(0, alias="tp")  # 0: todo, 1: project?
