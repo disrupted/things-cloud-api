@@ -83,6 +83,13 @@ class TodoItem:
     def changes(self) -> set:
         return set(self._changes)
 
+    def reset_changes(self) -> None:
+        self._changes.clear()
+
+    # @changes.deleter
+    # def changes(self) -> None:
+    #     self._changes.clear()
+
     def modify(self) -> None:
         self.modification_date = Util.now()
         self._changes.append("modification_date")
@@ -111,11 +118,11 @@ class TodoItem:
 
     @project.setter
     def project(self, project: str | None) -> None:
+        self._changes.append("_projects")
         if not project:
             self._projects.clear()
             return
         self._projects = [project]
-        self._changes.append("_projects")
         if self.area:
             self.area = None
         if self.destination == Destination.INBOX:
@@ -127,11 +134,11 @@ class TodoItem:
 
     @area.setter
     def area(self, area: str | None) -> None:
+        self._changes.append("_areas")
         if not area:
             self._areas.clear()
             return
         self._areas = [area]
-        self._changes.append("_areas")
         if self.project:
             self.project = None
         if self.destination == Destination.INBOX:
