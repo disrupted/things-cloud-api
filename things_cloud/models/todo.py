@@ -39,7 +39,7 @@ class Note:
 @define
 class TodoItem:
     index: int = field(default=0, init=False)
-    title: str = field(default="")
+    _title: str = field(default="")
     status: Status = field(default=Status.TODO, init=False)
     _destination: Destination = field(default=Destination.INBOX)
     creation_date: datetime | None = field(default=None)
@@ -98,14 +98,15 @@ class TodoItem:
     def project(self) -> str | None:
         return self._projects[0] if self._projects else None
 
-    # @property
-    # def title(self) -> str:
-    #     return self._title
+    @property
+    def title(self) -> str:
+        return self._title
 
-    # @title.setter
-    # def title(self, title: str) -> None:
-    #     self._title = title
-    #     self._changes.append("title")
+    @title.setter
+    def title(self, title: str) -> None:
+        self.modify()
+        self._changes.append("title")
+        self._title = title
 
     @property
     def destination(self) -> Destination:
@@ -113,11 +114,13 @@ class TodoItem:
 
     @destination.setter
     def destination(self, destination: Destination) -> None:
-        self._destination = destination
+        self.modify()
         self._changes.append("_destination")
+        self._destination = destination
 
     @project.setter
     def project(self, project: str | None) -> None:
+        self.modify()
         self._changes.append("_projects")
         if not project:
             self._projects.clear()
@@ -134,6 +137,7 @@ class TodoItem:
 
     @area.setter
     def area(self, area: str | None) -> None:
+        self.modify()
         self._changes.append("_areas")
         if not area:
             self._areas.clear()
@@ -166,6 +170,7 @@ class TodoItem:
             tp=1,
         )
 
+    # HACK: prolly not needed longterm
     def find_changed(self) -> Deque[str]:
         d = Deque()
         for attribute in self.__attrs_attrs__:  # type: ignore
@@ -193,88 +198,61 @@ class TodoItem:
         self._changes.append("completion_date")
         self.modify()
 
-    @staticmethod
-    def cancel() -> TodoItem:
-        now = Util.now()
-        item = TodoItem(
-            status=Status.CANCELLED, modification_date=now, completion_date=now
-        )
-        return item.copy(include={"status", "modification_date", "completion_date"})
-
-    @staticmethod
-    def delete() -> TodoItem:
-        item = TodoItem(in_trash=True, modification_date=Util.now())
-        return item.copy(include={"in_trash", "modification_date"})
-
-    @staticmethod
-    def restore() -> TodoItem:
-        item = TodoItem(in_trash=False, modification_date=Util.now())
-        return item.copy(include={"in_trash", "modification_date"})
-
-    @staticmethod
-    def set_due_date(deadline: datetime) -> TodoItem:
-        item = TodoItem(due_date=deadline, modification_date=Util.now())
-        return item.copy(include={"due_date", "modification_date"})
-
-    @staticmethod
-    def clear_due_date() -> TodoItem:
-        item = TodoItem(due_date=None, modification_date=Util.now())
-        return item.copy(include={"due_date", "modification_date"})
-
-    @staticmethod
-    def set_reminder(reminder: time, scheduled_date: datetime) -> TodoItem:
-        item = TodoItem(
-            reminder=reminder,
-            scheduled_date=scheduled_date,
-            modification_date=Util.now(),
-        )
-        return item.copy(include={"reminder", "scheduled_date", "modification_date"})
-
-    @staticmethod
-    def clear_reminder() -> TodoItem:
-        item = TodoItem(reminder=None, modification_date=Util.now())
-        return item.copy(include={"reminder", "modification_date"})
-
-    @staticmethod
-    def set_evening() -> TodoItem:
-        today = Util.today()
-        item = TodoItem(
-            _destination=Destination.ANYTIME,
-            scheduled_date=today,
-            tir=today,
-            is_evening=True,
-            modification_date=Util.now(),
-        )
-        return item.copy(
-            include={
-                "destination",
-                "scheduled_date",
-                "tir",
-                "is_evening",
-                "modification_date",
-            }
-        )
+    def cancel(self) -> None:
+        self.status = Status.CANCELLED
+        self._changes.append("status")
+        self.completion_date = Util.now()
+        self._changes.append("completion_date")
+        self.modify()
 
     # @staticmethod
-    # def set_destination(destination: Destination) -> TodoItem:
+    # def delete() -> TodoItem:
+    #     item = TodoItem(in_trash=True, modification_date=Util.now())
+    #     return item.copy(include={"in_trash", "modification_date"})
+
+    # @staticmethod
+    # def restore() -> TodoItem:
+    #     item = TodoItem(in_trash=False, modification_date=Util.now())
+    #     return item.copy(include={"in_trash", "modification_date"})
+
+    # @staticmethod
+    # def set_due_date(deadline: datetime) -> TodoItem:
+    #     item = TodoItem(due_date=deadline, modification_date=Util.now())
+    #     return item.copy(include={"due_date", "modification_date"})
+
+    # @staticmethod
+    # def clear_due_date() -> TodoItem:
+    #     item = TodoItem(due_date=None, modification_date=Util.now())
+    #     return item.copy(include={"due_date", "modification_date"})
+
+    # @staticmethod
+    # def set_reminder(reminder: time, scheduled_date: datetime) -> TodoItem:
     #     item = TodoItem(
-    #         _destination=destination,
+    #         reminder=reminder,
+    #         scheduled_date=scheduled_date,
     #         modification_date=Util.now(),
     #     )
-    #     return item.copy(include={"destination", "modification_date"})
+    #     return item.copy(include={"reminder", "scheduled_date", "modification_date"})
 
-    @staticmethod
-    def set_today() -> TodoItem:
+    # @staticmethod
+    # def clear_reminder() -> TodoItem:
+    #     item = TodoItem(reminder=None, modification_date=Util.now())
+    #     return item.copy(include={"reminder", "modification_date"})
+
+    def evening(self) -> None:
         today = Util.today()
-        item = TodoItem(
-            destination=Destination.ANYTIME,
-            scheduled_date=today,
-            tir=today,
-            modification_date=Util.now(),
-        )
-        return item.copy(
-            include={"destination", "scheduled_date", "tir", "modification_date"}
-        )
+        self.destination = Destination.ANYTIME
+        self.scheduled_date = today
+        self.tir = today
+        self.is_evening = True
+        self.modify()
+
+    def today(self) -> None:
+        today = Util.today()
+        self.destination = Destination.ANYTIME
+        self.scheduled_date = today
+        self.tir = today
+        self.modify()
 
 
 converter = cattrs.Converter()
@@ -323,7 +301,7 @@ converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 
 ALIASES = {
     "index": "ix",
-    "title": "tt",
+    "_title": "tt",
     "status": "ss",
     "_destination": "st",
     "creation_date": "cd",
