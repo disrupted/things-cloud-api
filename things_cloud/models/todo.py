@@ -50,8 +50,8 @@ class TodoItem:
     due_date: datetime | None = field(default=None)
     in_trash: bool = field(default=False)
     is_project: bool = field(default=False)
-    projects: list[str] = field(factory=list)
-    areas: list[str] = field(factory=list)
+    _projects: list[str] = field(factory=list)
+    _areas: list[str] = field(factory=list)
     is_evening: bool = field(default=False, converter=int)
     tags: list[Any] = field(factory=list)
     tp: int = field(default=0)  # 0: todo, 1: project?
@@ -89,7 +89,7 @@ class TodoItem:
 
     @property
     def project(self) -> str | None:
-        return self.projects[0] if self.projects else None
+        return self._projects[0] if self._projects else None
 
     # @property
     # def title(self) -> str:
@@ -101,20 +101,30 @@ class TodoItem:
     #     self._changes.append("title")
 
     @project.setter
-    def project(self, project: str) -> None:
-        self.areas.clear()
-        self.projects = [project]
+    def project(self, project: str | None) -> None:
+        if not project:
+            self._projects.clear()
+            return
+        self._projects = [project]
+        self._changes.append("_projects")
+        if self.area:
+            self.area = None
         if self.destination == Destination.INBOX:
             self.destination = Destination.SOMEDAY
 
     @property
     def area(self) -> str | None:
-        return self.areas[0] if self.areas else None
+        return self._areas[0] if self._areas else None
 
     @area.setter
-    def area(self, area: str) -> None:
-        self.projects.clear()
-        self.areas = [area]
+    def area(self, area: str | None) -> None:
+        if not area:
+            self._areas.clear()
+            return
+        self._areas = [area]
+        self._changes.append("_areas")
+        if self.project:
+            self.project = None
         if self.destination == Destination.INBOX:
             self.destination = Destination.SOMEDAY
 
@@ -308,8 +318,8 @@ ALIASES = {
     "due_date": "dd",
     "in_trash": "tr",
     "is_project": "icp",
-    "projects": "pr",
-    "areas": "ar",
+    "_projects": "pr",
+    "_areas": "ar",
     "is_evening": "sb",
     "tags": "tg",
     "tp": "tp",  # 0: todo, 1: project?
