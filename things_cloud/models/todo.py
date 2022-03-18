@@ -38,10 +38,10 @@ class Note:
 
 @define
 class TodoItem:
-    index: int = field(default=0)
+    index: int = field(default=0, init=False)
     title: str = field(default="")
-    status: Status = field(default=Status.TODO)
-    destination: Destination = field(default=Destination.INBOX)
+    status: Status = field(default=Status.TODO, init=False)
+    _destination: Destination = field(default=Destination.INBOX)
     creation_date: datetime | None = field(default=None)
     modification_date: datetime | None = field(default=None)
     scheduled_date: datetime | None = field(default=None)
@@ -100,6 +100,15 @@ class TodoItem:
     #     self._title = title
     #     self._changes.append("title")
 
+    @property
+    def destination(self) -> Destination:
+        return self._destination
+
+    @destination.setter
+    def destination(self, destination: Destination) -> None:
+        self._destination = destination
+        self._changes.append("_destination")
+
     @project.setter
     def project(self, project: str | None) -> None:
         if not project:
@@ -132,8 +141,8 @@ class TodoItem:
     def create(title: str, destination: Destination) -> TodoItem:
         now = Util.now()
         return TodoItem(
-            title=title,
-            destination=destination,
+            title,
+            destination,
             creation_date=now,
             modification_date=now,
         )
@@ -142,8 +151,8 @@ class TodoItem:
     def create_project(title: str) -> TodoItem:
         now = Util.now()
         return TodoItem(
-            title=title,
-            destination=Destination.ANYTIME,
+            title,
+            Destination.ANYTIME,
             creation_date=now,
             modification_date=now,
             is_project=True,
@@ -223,7 +232,7 @@ class TodoItem:
     def set_evening() -> TodoItem:
         today = Util.today()
         item = TodoItem(
-            destination=Destination.ANYTIME,
+            _destination=Destination.ANYTIME,
             scheduled_date=today,
             tir=today,
             is_evening=True,
@@ -239,13 +248,13 @@ class TodoItem:
             }
         )
 
-    @staticmethod
-    def set_destination(destination: Destination) -> TodoItem:
-        item = TodoItem(
-            destination=destination,
-            modification_date=Util.now(),
-        )
-        return item.copy(include={"destination", "modification_date"})
+    # @staticmethod
+    # def set_destination(destination: Destination) -> TodoItem:
+    #     item = TodoItem(
+    #         _destination=destination,
+    #         modification_date=Util.now(),
+    #     )
+    #     return item.copy(include={"destination", "modification_date"})
 
     @staticmethod
     def set_today() -> TodoItem:
@@ -309,7 +318,7 @@ ALIASES = {
     "index": "ix",
     "title": "tt",
     "status": "ss",
-    "destination": "st",
+    "_destination": "st",
     "creation_date": "cd",
     "modification_date": "md",
     "scheduled_date": "sr",
