@@ -255,50 +255,85 @@ converter = cattrs.Converter()
 todo_unst_hook = make_dict_unstructure_fn(
     TodoItem,
     converter,
-    index=override(rename="ix"),
-    title=override(rename="tt"),
-    status=override(rename="ss"),
-    destination=override(rename="st"),
-    creation_date=override(rename="cd"),
-    modification_date=override(rename="md"),
-    scheduled_date=override(rename="sr"),
-    tir=override(rename="tir"),  # same as scheduled_date?
-    completion_date=override(rename="sp"),
-    due_date=override(rename="dd"),
-    in_trash=override(rename="tr"),
-    is_project=override(rename="icp"),
-    projects=override(rename="pr"),
-    areas=override(rename="ar"),
-    is_evening=override(rename="sb"),
-    tags=override(rename="tg"),
-    tp=override(rename="tp"),  # 0: todo, 1: project?
-    dds=override(rename="dds"),
-    rt=override(rename="rt"),
-    rmd=override(rename="rmd"),
-    dl=override(rename="dl"),
-    do=override(rename="do"),
-    lai=override(rename="lai"),
-    agr=override(rename="agr"),
-    lt=override(rename="lt"),
-    icc=override(rename="icc"),
-    ti=override(rename="ti"),  # position/order of items
-    reminder=override(rename="ato"),
-    icsd=override(rename="icsd"),
-    rp=override(rename="rp"),
-    acrd=override(rename="acrd"),
-    rr=override(rename="rr"),
-    note=override(rename="nt"),
+    # index=override(rename="ix"),
+    # title=override(rename="tt"),
+    # status=override(rename="ss"),
+    # destination=override(rename="st"),
+    # creation_date=override(rename="cd"),
+    # modification_date=override(rename="md"),
+    # scheduled_date=override(rename="sr"),
+    # tir=override(rename="tir"),  # same as scheduled_date?
+    # completion_date=override(rename="sp"),
+    # due_date=override(rename="dd"),
+    # in_trash=override(rename="tr"),
+    # is_project=override(rename="icp"),
+    # projects=override(rename="pr"),
+    # areas=override(rename="ar"),
+    # is_evening=override(rename="sb"),
+    # tags=override(rename="tg"),
+    # tp=override(rename="tp"),  # 0: todo, 1: project?
+    # dds=override(rename="dds"),
+    # rt=override(rename="rt"),
+    # rmd=override(rename="rmd"),
+    # dl=override(rename="dl"),
+    # do=override(rename="do"),
+    # lai=override(rename="lai"),
+    # agr=override(rename="agr"),
+    # lt=override(rename="lt"),
+    # icc=override(rename="icc"),
+    # ti=override(rename="ti"),  # position/order of items
+    # reminder=override(rename="ato"),
+    # icsd=override(rename="icsd"),
+    # rp=override(rename="rp"),
+    # acrd=override(rename="acrd"),
+    # rr=override(rename="rr"),
+    # note=override(rename="nt"),
 )
 
 
-converter.register_unstructure_hook(TodoItem, todo_unst_hook)
+# converter.register_unstructure_hook(TodoItem, todo_unst_hook)
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 
+ALIASES = {
+    "index": "ix",
+    "title": "tt",
+    "status": "ss",
+    "destination": "st",
+    "creation_date": "cd",
+    "modification_date": "md",
+    "scheduled_date": "sr",
+    "tir": "tir",  # same as scheduled_date?
+    "completion_date": "sp",
+    "due_date": "dd",
+    "in_trash": "tr",
+    "is_project": "icp",
+    "projects": "pr",
+    "areas": "ar",
+    "is_evening": "sb",
+    "tags": "tg",
+    "tp": "tp",  # 0: todo, 1: project?
+    "dds": "dds",
+    "rt": "rt",
+    "rmd": "rmd",
+    "dl": "dl",
+    "do": "do",
+    "lai": "lai",
+    "agr": "agr",
+    "lt": "lt",
+    "icc": "icc",
+    "ti": "ti",  # position/order of items
+    "reminder": "ato",
+    "icsd": "icsd",
+    "rp": "rp",
+    "acrd": "acrd",
+    "rr": "rr",
+    "note": "nt",
+}
+
 
 def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
-    d = asdict(todo)
-    if keys:
-        # filter allowed keys
-        d = {k: v for k, v in d.items() if k in keys}
-    return converter.unstructure(d)
+    # d = asdict(todo)
+    d = converter.unstructure(todo)
+    # filter allowed keys
+    return {ALIASES[k]: v for k, v in d.items() if keys is None or k in keys}
