@@ -95,10 +95,6 @@ class TodoItem:
         self._changes.append("modification_date")
 
     @property
-    def project(self) -> str | None:
-        return self._projects[0] if self._projects else None
-
-    @property
     def title(self) -> str:
         return self._title
 
@@ -117,6 +113,10 @@ class TodoItem:
         self.modify()
         self._changes.append("_destination")
         self._destination = destination
+
+    @property
+    def project(self) -> str | None:
+        return self._projects[0] if self._projects else None
 
     @project.setter
     def project(self, project: str | None) -> None:
