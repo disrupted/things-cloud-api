@@ -220,3 +220,11 @@ def test_deserialize():
     assert todo._rr is None
     assert todo._note == Note()
     assert not todo._changes
+
+
+def test_update():
+    todo = TodoItem("original")
+    update = TodoItem("updated")
+    keys = {"tt"}
+    todo.update(update, keys)
+    assert todo.title == "updated"

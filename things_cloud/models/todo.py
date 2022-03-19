@@ -242,6 +242,11 @@ class TodoItem:
         self.scheduled_date = today
         self.modify()
 
+    def update(self, update: TodoItem, keys: set[str]) -> None:
+        for key in translate_keys_deserialize(keys):
+            val = getattr(update, key)
+            setattr(self, key, val)
+
 
 # converter = cattrs.Converter()
 converter = cattrs.GenConverter(forbid_extra_keys=True)
@@ -300,7 +305,7 @@ converter.register_structure_hook(
     datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp)
 )
 
-ALIASES = {
+ALIASES_UNSTRUCT = {
     "_index": "ix",
     "_title": "tt",
     "_status": "ss",
@@ -336,6 +341,8 @@ ALIASES = {
     "_note": "nt",
 }
 
+ALIASES_STRUCT = {v: k for k, v in ALIASES_UNSTRUCT.items()}
+
 
 def get_changes(todo: TodoItem) -> dict:
     return serialize_dict(todo, todo.changes)
@@ -345,8 +352,12 @@ def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
     # d = asdict(todo)
     d = converter.unstructure(todo)
     # filter allowed keys
-    return {ALIASES[k]: v for k, v in d.items() if keys is None or k in keys}
+    return {ALIASES_UNSTRUCT[k]: v for k, v in d.items() if keys is None or k in keys}
 
 
 def deserialize(api_object: dict) -> TodoItem:
     return converter.structure(api_object, TodoItem)
+
+
+def translate_keys_deserialize(keys: set[str]) -> set[str]:
+    return {ALIASES_STRUCT[k] for k in keys}
