@@ -58,13 +58,13 @@ class ThingsClient:
     def update(self):
         self._offset = self.__fetch(self._offset)
 
-    def create(self, item: TodoItem) -> str:
+    def create(self, item: TodoItem) -> None:
         self.update()
         item._index = self._offset + 1
-        return self.__create_todo(self._offset, item)
+        self.__create_todo(self._offset, item)
 
-    def edit(self, uuid: str, item: TodoItem) -> None:
-        self.__modify_todo(uuid, self._offset, item)
+    def edit(self, item: TodoItem) -> None:
+        self.__modify_todo(self._offset, item)
 
     def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
@@ -136,26 +136,23 @@ class ThingsClient:
         )
         return response.json()["server-head-index"]
 
-    def __create_todo(self, index: int, item: TodoItem) -> str:
-        uuid = Util.uuid()
-        item._uuid = uuid
-        data = {uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
+    def __create_todo(self, index: int, item: TodoItem) -> None:
+        data = {item.uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
         log.debug("", data=data)
 
         try:
             self._offset = self.__commit(index, data)
             item.reset_changes()
-            return uuid
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e
 
-    def __modify_todo(self, uuid: str, index: int, item: TodoItem) -> None:
+    def __modify_todo(self, index: int, item: TodoItem) -> None:
         changes = item.changes
         if not changes:
             log.warning("there are no changes to be sent")
             return
-        data = {uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, changes)}}
+        data = {item.uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, changes)}}
         log.debug("", data=data)
 
         try:

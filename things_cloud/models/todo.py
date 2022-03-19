@@ -38,7 +38,7 @@ class Note:
 
 @define
 class TodoItem:
-    _uuid: str | None = field(default=None, init=False)
+    _uuid: str = field(factory=Util.uuid, init=False)
     _index: int = field(default=0, kw_only=True)
     _title: str = field(default="")
     _status: Status = field(default=Status.TODO, kw_only=True)
@@ -75,7 +75,7 @@ class TodoItem:
     _changes: Deque[str] = field(factory=Deque, init=False)
 
     @property
-    def uuid(self) -> str | None:
+    def uuid(self) -> str:
         return self._uuid
 
     @property
