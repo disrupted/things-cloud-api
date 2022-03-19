@@ -47,7 +47,7 @@ class TodoItem:
     scheduled_date: datetime | None = field(default=None)
     tir: datetime | None = field(default=None)  # same as scheduled_date?
     completion_date: datetime | None = field(default=None)
-    due_date: datetime | None = field(default=None)
+    _due_date: datetime | None = field(default=None)
     trashed: bool = field(default=False)
     is_project: bool = field(default=False)
     _projects: list[str] = field(factory=list)
@@ -202,15 +202,15 @@ class TodoItem:
         self.trashed = False
         self.modify()
 
-    # @staticmethod
-    # def set_due_date(deadline: datetime) -> TodoItem:
-    #     item = TodoItem(due_date=deadline, modification_date=Util.now())
-    #     return item.copy(include={"due_date", "modification_date"})
+    @property
+    def due_date(self) -> datetime | None:
+        return self._due_date
 
-    # @staticmethod
-    # def clear_due_date() -> TodoItem:
-    #     item = TodoItem(due_date=None, modification_date=Util.now())
-    #     return item.copy(include={"due_date", "modification_date"})
+    @due_date.setter
+    def due_date(self, deadline: datetime | None) -> None:
+        self._changes.append("_due_date")
+        self._due_date = deadline
+        self.modify()
 
     # @staticmethod
     # def set_reminder(reminder: time, scheduled_date: datetime) -> TodoItem:
@@ -296,7 +296,7 @@ ALIASES = {
     "scheduled_date": "sr",
     "tir": "tir",  # same as scheduled_date?
     "completion_date": "sp",
-    "due_date": "dd",
+    "_due_date": "dd",
     "in_trash": "tr",
     "is_project": "icp",
     "_projects": "pr",
