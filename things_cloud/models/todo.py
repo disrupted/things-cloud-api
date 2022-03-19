@@ -148,23 +148,11 @@ class TodoItem:
         if self.destination == Destination.INBOX:
             self.destination = Destination.SOMEDAY
 
-    # @staticmethod
-    # def create(title: str, destination: Destination) -> TodoItem:
-    #     now = Util.now()
-    #     item = TodoItem()
-    #         item.title,
-    #         destination,
-    #         creation_date=now,
-    #         modification_date=now,
-
     @staticmethod
     def create_project(title: str) -> TodoItem:
-        now = Util.now()
         return TodoItem(
             title,
             Destination.ANYTIME,
-            creation_date=now,
-            modification_date=now,
             is_project=True,
             tp=1,
         )
