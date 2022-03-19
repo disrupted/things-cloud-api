@@ -5,9 +5,8 @@ from enum import Enum
 from typing import Any, Deque
 
 import cattrs
-from attr import Factory
-from attrs import asdict, define, field
-from cattrs.gen import make_dict_unstructure_fn, override
+from attrs import define, field
+from cattrs.gen import make_dict_unstructure_fn
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -49,12 +48,12 @@ class TodoItem:
     _completion_date: datetime | None = field(default=None)
     _due_date: datetime | None = field(default=None)
     trashed: bool = field(default=False)
-    is_project: bool = field(default=False)
+    _is_project: bool = field(default=False, init=False)
     _projects: list[str] = field(factory=list)
     _areas: list[str] = field(factory=list)
     is_evening: bool = field(default=False, converter=int)
     tags: list[Any] = field(factory=list)
-    tp: int = field(default=0)  # 0: todo, 1: project?
+    _tp: int = field(default=0, init=False)  # 0: todo, 1: project?
     dds: None = field(default=None)
     rt: list[Any] = field(factory=list)
     rmd: None = field(default=None)
@@ -72,12 +71,6 @@ class TodoItem:
     rr: None = field(default=None)
     note: Note = field(factory=Note)
     _changes = Deque()
-
-    # def serialize(self) -> str:
-    #     return self.json(by_alias=True)
-
-    # def serialize_dict(self) -> dict:
-    #     return SERDE.deserialize(self.serialize())
 
     @property
     def changes(self) -> set:
@@ -144,29 +137,6 @@ class TodoItem:
         if self.project:
             self.project = None
 
-    @staticmethod
-    def create_project(title: str) -> TodoItem:
-        return TodoItem(
-            title,
-            Destination.ANYTIME,
-            is_project=True,
-            tp=1,
-        )
-
-    # HACK: prolly not needed longterm
-    def find_changed(self) -> Deque[str]:
-        d = Deque()
-        for attribute in self.__attrs_attrs__:  # type: ignore
-            value = getattr(self, attribute.name)
-            if value != attribute.default:
-                if (
-                    type(attribute.default) is Factory
-                    and attribute.default.factory() == value
-                ):
-                    continue
-                d.append(attribute.name)
-        return d
-
     def todo(self) -> None:
         self.status = Status.TODO
         self._changes.append("status")
@@ -194,6 +164,16 @@ class TodoItem:
         self._changes.append("trashed")
         self.trashed = False
         self.modify()
+
+    def as_project(self) -> TodoItem:
+        self._is_project = True
+        self._changes.append("_is_project")
+        self._tp = 1
+        self._changes.append("_tp")
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.ANYTIME
+        self.modify()
+        return self
 
     @property
     def completion_date(self) -> datetime | None:
@@ -253,6 +233,7 @@ class TodoItem:
 
 
 converter = cattrs.Converter()
+# TODO
 todo_unst_hook = make_dict_unstructure_fn(
     TodoItem,
     converter,
@@ -308,12 +289,12 @@ ALIASES = {
     "_completion_date": "sp",
     "_due_date": "dd",
     "trashed": "tr",
-    "is_project": "icp",
+    "_is_project": "icp",
     "_projects": "pr",
     "_areas": "ar",
     "is_evening": "sb",
     "tags": "tg",
-    "tp": "tp",  # 0: todo, 1: project?
+    "_tp": "tp",  # 0: todo, 1: project?
     "dds": "dds",
     "rt": "rt",
     "rmd": "rmd",

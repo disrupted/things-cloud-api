@@ -16,7 +16,7 @@ def main():
     things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
 
     # create a project
-    project = TodoItem.create_project("Things Cloud Project")
+    project = TodoItem("Things Cloud Project").as_project()
     project_uuid = things.create(project)
     log.debug("created project", uuid=project_uuid)
 
@@ -24,16 +24,12 @@ def main():
     # create a todo inside project
     todo = TodoItem("Try out Things Cloud")
     todo.project = project_uuid
-    print(todo.changes)
     uuid = things.create(todo)
-    print(todo.changes)
 
     sleep(10)
     # schedule for today
     todo.today()
-    print(todo.changes)
     things.edit(uuid, todo)
-    print(todo.changes)
 
 
 if __name__ == "__main__":
