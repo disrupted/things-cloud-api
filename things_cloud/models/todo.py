@@ -293,7 +293,7 @@ ALIASES = {
     "tir": "tir",  # same as scheduled_date?
     "completion_date": "sp",
     "_due_date": "dd",
-    "in_trash": "tr",
+    "trashed": "tr",
     "is_project": "icp",
     "_projects": "pr",
     "_areas": "ar",
