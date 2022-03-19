@@ -65,7 +65,7 @@ class TodoItem:
     lt: bool = field(default=False)
     icc: int = field(default=0)
     ti: int = field(default=0)  # position/order of items
-    reminder: time | None = field(default=None)
+    _reminder: time | None = field(default=None)
     icsd: None = field(default=None)
     rp: None = field(default=None)
     acrd: None = field(default=None)
@@ -212,19 +212,15 @@ class TodoItem:
         self._due_date = deadline
         self.modify()
 
-    # @staticmethod
-    # def set_reminder(reminder: time, scheduled_date: datetime) -> TodoItem:
-    #     item = TodoItem(
-    #         reminder=reminder,
-    #         scheduled_date=scheduled_date,
-    #         modification_date=Util.now(),
-    #     )
-    #     return item.copy(include={"reminder", "scheduled_date", "modification_date"})
+    @property
+    def reminder(self) -> time | None:
+        return self._reminder
 
-    # @staticmethod
-    # def clear_reminder() -> TodoItem:
-    #     item = TodoItem(reminder=None, modification_date=Util.now())
-    #     return item.copy(include={"reminder", "modification_date"})
+    @reminder.setter
+    def reminder(self, reminder: time | None) -> None:
+        self._changes.append("_reminder")
+        self._reminder = reminder
+        self.modify()
 
     def evening(self) -> None:
         today = Util.today()
@@ -314,7 +310,7 @@ ALIASES = {
     "lt": "lt",
     "icc": "icc",
     "ti": "ti",  # position/order of items
-    "reminder": "ato",
+    "_reminder": "ato",
     "icsd": "icsd",
     "rp": "rp",
     "acrd": "acrd",
