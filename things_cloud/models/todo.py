@@ -6,6 +6,7 @@ from typing import Any, Deque
 
 import cattrs
 from attrs import define, field
+from cattr.gen import make_dict_structure_fn
 from cattrs.gen import make_dict_unstructure_fn, override
 
 from things_cloud.models.serde import TodoSerde
@@ -37,40 +38,45 @@ class Note:
 
 @define
 class TodoItem:
-    _index: int = field(default=0, init=False)
+    _uuid: str = field(factory=Util.uuid, init=False)
+    _index: int = field(default=0, kw_only=True)
     _title: str = field(default="")
-    _status: Status = field(default=Status.TODO, init=False)
-    _destination: Destination = field(default=Destination.INBOX, init=False)
-    _creation_date: datetime | None = field(factory=Util.now, init=False)
-    _modification_date: datetime | None = field(factory=Util.now, init=False)
-    _scheduled_date: datetime | None = field(default=None, init=False)
-    _tir: datetime | None = field(default=None, init=False)  # same as scheduled_date?
-    _completion_date: datetime | None = field(default=None, init=False)
-    _due_date: datetime | None = field(default=None, init=False)
-    _trashed: bool = field(default=False, init=False)
-    _is_project: bool = field(default=False, init=False)
-    _projects: list[str] = field(factory=list, init=False)
-    _areas: list[str] = field(factory=list, init=False)
-    _is_evening: bool = field(default=False, converter=int, init=False)
-    _tags: list[Any] = field(factory=list, init=False)
-    _tp: int = field(default=0, init=False)  # 0: todo, 1: project?
-    _dds: None = field(default=None, init=False)
-    _rt: list[Any] = field(factory=list, init=False)
-    _rmd: None = field(default=None, init=False)
-    _dl: list[Any] = field(factory=list, init=False)
-    _do: int = field(default=0, init=False)
-    _lai: None = field(default=None, init=False)
-    _agr: list[Any] = field(factory=list, init=False)
-    _lt: bool = field(default=False, init=False)
-    _icc: int = field(default=0, init=False)
-    _ti: int = field(default=0, init=False)  # position/order of items
-    _reminder: time | None = field(default=None, init=False)
-    _icsd: None = field(default=None, init=False)
-    _rp: None = field(default=None, init=False)
-    _acrd: None = field(default=None, init=False)
-    _rr: None = field(default=None, init=False)
-    _note: Note = field(factory=Note, init=False)
-    _changes: Deque[str] = field(factory=Deque)
+    _status: Status = field(default=Status.TODO, kw_only=True)
+    _destination: Destination = field(default=Destination.INBOX, kw_only=True)
+    _creation_date: datetime | None = field(factory=Util.now, kw_only=True)
+    _modification_date: datetime | None = field(factory=Util.now, kw_only=True)
+    _scheduled_date: datetime | None = field(default=None, kw_only=True)
+    _tir: datetime | None = field(default=None, kw_only=True)  # same as scheduled_date?
+    _completion_date: datetime | None = field(default=None, kw_only=True)
+    _due_date: datetime | None = field(default=None, kw_only=True)
+    _trashed: bool = field(default=False, kw_only=True)
+    _is_project: bool = field(default=False, kw_only=True)
+    _projects: list[str] = field(factory=list, kw_only=True)
+    _areas: list[str] = field(factory=list, kw_only=True)
+    _is_evening: bool = field(default=False, converter=int, kw_only=True)
+    _tags: list[Any] = field(factory=list, kw_only=True)
+    _tp: int = field(default=0, kw_only=True)  # 0: todo, 1: project?
+    _dds: Any = field(default=None, kw_only=True)
+    _rt: list[Any] = field(factory=list, kw_only=True)
+    _rmd: Any = field(default=None, kw_only=True)
+    _dl: list[Any] = field(factory=list, kw_only=True)
+    _do: int = field(default=0, kw_only=True)
+    _lai: Any = field(default=None, kw_only=True)
+    _agr: list[Any] = field(factory=list, kw_only=True)
+    _lt: bool = field(default=False, kw_only=True)
+    _icc: int = field(default=0, kw_only=True)
+    _ti: int = field(default=0, kw_only=True)  # position/order of items
+    _reminder: time | None = field(default=None, kw_only=True)
+    _icsd: Any = field(default=None, kw_only=True)
+    _rp: Any = field(default=None, kw_only=True)
+    _acrd: Any = field(default=None, kw_only=True)
+    _rr: Any = field(default=None, kw_only=True)
+    _note: Note = field(factory=Note, kw_only=True)
+    _changes: Deque[str] = field(factory=Deque, init=False)
+
+    @property
+    def uuid(self) -> str:
+        return self._uuid
 
     @property
     def changes(self) -> set:
@@ -237,51 +243,62 @@ class TodoItem:
         self.modify()
 
 
-converter = cattrs.Converter()
+# converter = cattrs.Converter()
+converter = cattrs.GenConverter(forbid_extra_keys=True)
 # TODO
 todo_unst_hook = make_dict_unstructure_fn(
     TodoItem,
     converter,
+    _uuid=override(omit=True),
     _changes=override(omit=True),
-    # index=override(rename="ix"),
-    # title=override(rename="tt"),
-    # status=override(rename="ss"),
-    # destination=override(rename="st"),
-    # creation_date=override(rename="cd"),
-    # modification_date=override(rename="md"),
-    # scheduled_date=override(rename="sr"),
-    # tir=override(rename="tir"),  # same as scheduled_date?
-    # completion_date=override(rename="sp"),
-    # due_date=override(rename="dd"),
-    # in_trash=override(rename="tr"),
-    # is_project=override(rename="icp"),
-    # projects=override(rename="pr"),
-    # areas=override(rename="ar"),
-    # is_evening=override(rename="sb"),
-    # tags=override(rename="tg"),
-    # tp=override(rename="tp"),  # 0: todo, 1: project?
-    # dds=override(rename="dds"),
-    # rt=override(rename="rt"),
-    # rmd=override(rename="rmd"),
-    # dl=override(rename="dl"),
-    # do=override(rename="do"),
-    # lai=override(rename="lai"),
-    # agr=override(rename="agr"),
-    # lt=override(rename="lt"),
-    # icc=override(rename="icc"),
-    # ti=override(rename="ti"),  # position/order of items
-    # reminder=override(rename="ato"),
-    # icsd=override(rename="icsd"),
-    # rp=override(rename="rp"),
-    # acrd=override(rename="acrd"),
-    # rr=override(rename="rr"),
-    # note=override(rename="nt"),
+)
+
+todo_st_hook = make_dict_structure_fn(
+    TodoItem,
+    converter,
+    _index=override(rename="ix"),
+    _title=override(rename="tt"),
+    _status=override(rename="ss"),
+    _destination=override(rename="st"),
+    _creation_date=override(rename="cd"),
+    _modification_date=override(rename="md"),
+    _scheduled_date=override(rename="sr"),
+    _tir=override(rename="tir"),  # same as scheduled_date?
+    _completion_date=override(rename="sp"),
+    _due_date=override(rename="dd"),
+    _in_trash=override(rename="tr"),
+    _is_project=override(rename="icp"),
+    _projects=override(rename="pr"),
+    _areas=override(rename="ar"),
+    _is_evening=override(rename="sb"),
+    _tags=override(rename="tg"),
+    _tp=override(rename="tp"),  # 0: todo, 1: project?
+    _dds=override(rename="dds"),
+    _rt=override(rename="rt"),
+    _rmd=override(rename="rmd"),
+    _dl=override(rename="dl"),
+    _do=override(rename="do"),
+    _lai=override(rename="lai"),
+    _agr=override(rename="agr"),
+    _lt=override(rename="lt"),
+    _icc=override(rename="icc"),
+    _ti=override(rename="ti"),  # position/order of items
+    _reminder=override(rename="ato"),
+    _icsd=override(rename="icsd"),
+    _rp=override(rename="rp"),
+    _acrd=override(rename="acrd"),
+    _rr=override(rename="rr"),
+    _note=override(rename="nt"),
 )
 
 
 converter.register_unstructure_hook(TodoItem, todo_unst_hook)
+converter.register_structure_hook(TodoItem, todo_st_hook)  # type: ignore
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
+converter.register_structure_hook(
+    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp)
+)
 
 ALIASES = {
     "_index": "ix",
@@ -329,3 +346,7 @@ def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
     d = converter.unstructure(todo)
     # filter allowed keys
     return {ALIASES[k]: v for k, v in d.items() if keys is None or k in keys}
+
+
+def deserialize(api_object: dict) -> TodoItem:
+    return converter.structure(api_object, TodoItem)

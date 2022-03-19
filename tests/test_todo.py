@@ -4,7 +4,14 @@ import pytest
 from attrs import asdict
 
 from things_cloud.models.serde import TodoSerde
-from things_cloud.models.todo import Destination, Status, TodoItem, serialize_dict
+from things_cloud.models.todo import (
+    Destination,
+    Note,
+    Status,
+    TodoItem,
+    deserialize,
+    serialize_dict,
+)
 from things_cloud.utils import Util
 
 FAKE_TIME = dt.datetime(2021, 1, 1)
@@ -139,3 +146,78 @@ def test_assign_area():
         "_areas",
         "_modification_date",
     }
+
+
+def test_deserialize():
+    api_object = {
+        "ix": 1234,
+        "cd": 1641234567,
+        "icsd": None,
+        "ar": [],
+        "tir": None,
+        "rmd": None,
+        "pr": ["ABCd1ee0ykmXYZqT98huxa"],
+        "rp": None,
+        "rr": None,
+        "dds": None,
+        "tt": "test task",
+        "tr": False,
+        "tp": 0,
+        "lt": False,
+        "acrd": None,
+        "ti": 0,
+        "tg": [],
+        "icp": False,
+        "nt": {"ch": 0, "_t": "tx", "t": 0, "v": ""},
+        "do": 0,
+        "dl": [],
+        "lai": None,
+        "dd": None,
+        "rt": [],
+        "md": 1641234567,
+        "ss": 0,
+        "sr": None,
+        "sp": None,
+        "st": 1,
+        "icc": 0,
+        "ato": None,
+        "sb": 0,
+        "agr": [],
+    }
+    todo = deserialize(api_object)
+    time = dt.datetime(2022, 1, 3, 19, 29, 27)
+    assert todo._uuid
+    assert todo._index == 1234
+    assert todo._title == "test task"
+    assert todo._status == Status.TODO
+    assert todo._destination == Destination.ANYTIME
+    assert todo._creation_date == time
+    assert todo._modification_date == time
+    assert todo._scheduled_date is None
+    assert todo._tir is None
+    assert todo._completion_date is None
+    assert todo._due_date is None
+    assert todo._trashed is False
+    assert todo._is_project is False
+    assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
+    assert todo._areas == []
+    assert todo._is_evening == 0
+    assert todo._tags == []
+    assert todo._tp == 0
+    assert todo._dds is None
+    assert todo._rt == []
+    assert todo._rmd is None
+    assert todo._dl == []
+    assert todo._do == 0
+    assert todo._lai is None
+    assert todo._agr == []
+    assert todo._lt is False
+    assert todo._icc == 0
+    assert todo._ti == 0
+    assert todo._reminder is None
+    assert todo._icsd is None
+    assert todo._rp is None
+    assert todo._acrd is None
+    assert todo._rr is None
+    assert todo._note == Note()
+    assert not todo._changes
