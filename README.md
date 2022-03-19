@@ -15,7 +15,6 @@ Contributions are welcome to translate the rest of the fields.
 ## Usage
 
 ```python
-from time import sleep
 from things_cloud import ThingsClient
 from things_cloud.models import TodoItem
 
@@ -29,18 +28,16 @@ things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
 # create a project
 project = TodoItem("Things Cloud Project").as_project()
 # push to Things Cloud
-project_uuid = things.create(project) # returns unique ID for project
+things.create(project)
 
-sleep(10)
 # create a todo inside project
 todo = TodoItem("Try out Things Cloud")
-todo.project = project_uuid
-todo_uuid = things.create(todo) # returns unique ID for todo
+todo.project = project.uuid
+things.create(todo)
 
-sleep(20)
 # schedule for today
 todo.today()
-things.edit(todo_uuid, todo)
+things.edit(todo)
 ```
 
 ### Progress
