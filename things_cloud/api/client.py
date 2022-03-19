@@ -5,14 +5,14 @@ from structlog import get_logger
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
 from things_cloud.models.serde import JsonSerde
-from things_cloud.models.todo import TodoItem, serialize_dict
-from things_cloud.utils import Util
+from things_cloud.models.todo import TodoItem, deserialize, serialize_dict
 
 log = get_logger()
 
 
 class ThingsClient:
     def __init__(self, acc: str, initial_offset: int | None = None):
+        self._items: dict[str, TodoItem] = {}
         self._base_url: str = f"{API_BASE}/history/{acc}"
         self._client = httpx.Client(
             base_url=self._base_url,
@@ -77,11 +77,29 @@ class ThingsClient:
                 "start-index": str(index),
             },
         )
-        if response and response.status_code == 200:
+        if response.status_code == 200:
             return response.json()["current-item-index"]
         else:
             log.error("Error getting current index", response=response)
             raise ThingsCloudException
+
+    def _process_updates(self, data: dict) -> list[TodoItem]:
+        todos: list[TodoItem] = []
+        if not data["items"]:
+            return todos
+
+        updates: dict[str, dict] = data["items"][0]
+        for uuid, update in updates.items():
+            log.debug("found update", uuid=uuid, update=update)
+            item = update["p"]
+            if update["t"] == 0:  # new todo
+                todo = deserialize(item)
+                todo._uuid = uuid
+                todos.append(todo)
+            if update["t"] == 1:  # edited todo
+                continue  # TODO
+
+        return todos
 
     def __commit(
         self,
@@ -100,14 +118,14 @@ class ThingsClient:
         return response.json()["server-head-index"]
 
     def __create_todo(self, index: int, item: TodoItem) -> str:
-        uuid = Util.uuid()
-        data = {uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
+        # uuid = Util.uuid()
+        data = {item.uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
         log.debug("", data=data)
 
         try:
             self._offset = self.__commit(index, data)
             item.reset_changes()
-            return uuid
+            return item.uuid
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e
