@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 from httpx import Request, RequestError, Response
 from structlog import get_logger
@@ -13,7 +15,7 @@ log = get_logger()
 
 class ThingsClient:
     def __init__(self, acc: str, initial_offset: int | None = None):
-        self._items: dict[str, TodoItem] = {}
+        self._items: dict[str, TodoItem] = {}  # TODO: create DB
         self._base_url: str = f"{API_BASE}/history/{acc}"
         self._client = httpx.Client(
             base_url=self._base_url,
@@ -86,26 +88,37 @@ class ThingsClient:
             log.error("Error getting current index", response=response)
             raise ThingsCloudException
 
-    def _process_updates(self, data: dict) -> list[TodoItem]:
-        todos: list[TodoItem] = []
+    def _process_updates(self, data: dict) -> None:
         if not data["items"]:
-            return todos
+            return
 
-        updates: dict[str, dict] = data["items"][0]
-        for uuid, update in updates.items():
-            log.debug("found update", uuid=uuid, update=update)
-            item = update["p"]
-            todo = deserialize(item)
-            todo._uuid = uuid
-            todos.append(todo)
-            if update["t"] == 0:  # new todo
-                continue
-            elif update["t"] == 1:  # edited todo
-                continue  # TODO
-            else:
-                raise ThingsUpdateException
+        updates: list[dict[str, dict]] = data["items"]
+        for update in updates:
+            for uuid, body in update.items():  # actually just one item
+                log.debug("found update", uuid=uuid, body=body)
+                item: dict[str, Any] = body["p"]
+                todo = deserialize(item)
+                todo._uuid = uuid
+                if body["t"] == 0:  # new todo
+                    self._items[uuid] = todo
+                elif body["t"] == 1:  # edited todo
+                    self._apply_edits(todo, set(item.keys()))
+                else:
+                    raise ThingsUpdateException
 
-        return todos
+    def _apply_edits(self, update: TodoItem, keys: set[str]) -> None:
+        try:
+            self._items[update.uuid].update(update, keys)
+        except KeyError:
+            log.error(f"todo {update.uuid} not found")
+
+    # HACK: temporary
+    def today(self) -> list[TodoItem]:
+        return [
+            item
+            for _, item in self._items.items()
+            if item.scheduled_date == Util.today()
+        ]
 
     def __commit(
         self,

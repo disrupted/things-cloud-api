@@ -21,6 +21,7 @@ def test_create():
 
 
 def test_process_new():
+    things._items.clear()
     data = {
         "items": [
             {
@@ -72,7 +73,8 @@ def test_process_new():
         "latest-total-content-size": 1234567,
     }
 
-    todos = things._process_updates(data)
+    things._process_updates(data)
+    todos = list(things._items.values())
     assert len(todos) == 1
     time = datetime(2022, 1, 3, 19, 29, 27)
     todo = todos[0]
@@ -114,10 +116,15 @@ def test_process_new():
 
 
 def test_process_updated():
+    things._items.clear()
+    UUID = "aBCDiHyah4Uf0MQqp11jsX"
+    todo = TodoItem("test original")
+    todo._uuid = UUID
+    things._items = {UUID: todo}
     data = {
         "items": [
             {
-                "aBCDiHyah4Uf0MQqp11jsX": {
+                UUID: {
                     "p": {"md": 1641234567.123456, "tt": "test updated"},
                     "e": "Task6",
                     "t": 1,
@@ -131,10 +138,129 @@ def test_process_updated():
         "latest-total-content-size": 1234567,
     }
 
-    todos = things._process_updates(data)
+    things._process_updates(data)
+    todos = things._items
     assert len(todos) == 1
-    todo = todos[0]
-    assert todo._uuid == "aBCDiHyah4Uf0MQqp11jsX"
+    todo = todos[UUID]
+    assert todo._uuid == UUID
     assert todo._title == "test updated"
     assert todo._modification_date == datetime(2022, 1, 3, 19, 29, 27, 123456)
     assert not todo._changes
+
+
+def test_process_multiple():
+    things._items.clear()
+    UUID1 = "aBCDiHyah4Uf0MQqp11js1"
+    UUID2 = "aBCDiHyah4Uf0MQqp11js2"
+    UUID3 = "aBCDiHyah4Uf0MQqp11js3"
+    data = {
+        "items": [
+            # updated non-existant todo
+            {
+                UUID1: {
+                    "p": {"md": 1641234567.123456, "tt": "test updated"},
+                    "e": "Task6",
+                    "t": 1,
+                }
+            },
+            # new todo
+            {
+                UUID2: {
+                    "p": {
+                        "ix": 2,
+                        "cd": 1641234567,
+                        "icsd": None,
+                        "ar": [],
+                        "tir": None,
+                        "rmd": None,
+                        "pr": ["ABCd1ee0ykmXYZqT98huxa"],
+                        "rp": None,
+                        "rr": None,
+                        "dds": None,
+                        "tt": "task 2",
+                        "tr": False,
+                        "tp": 0,
+                        "lt": False,
+                        "acrd": None,
+                        "ti": 0,
+                        "tg": [],
+                        "icp": False,
+                        "nt": {"ch": 0, "_t": "tx", "t": 0, "v": ""},
+                        "do": 0,
+                        "dl": [],
+                        "lai": None,
+                        "dd": None,
+                        "rt": [],
+                        "md": 1641234567,
+                        "ss": 0,
+                        "sr": None,
+                        "sp": None,
+                        "st": 1,
+                        "icc": 0,
+                        "ato": None,
+                        "sb": 0,
+                        "agr": [],
+                    },
+                    "e": "Task6",
+                    "t": 0,
+                }
+            },
+            # new todo
+            {
+                UUID3: {
+                    "p": {
+                        "ix": 3,
+                        "cd": 1641234567,
+                        "icsd": None,
+                        "ar": [],
+                        "tir": None,
+                        "rmd": None,
+                        "pr": [],
+                        "rp": None,
+                        "rr": None,
+                        "dds": None,
+                        "tt": "task 3",
+                        "tr": False,
+                        "tp": 0,
+                        "lt": False,
+                        "acrd": None,
+                        "ti": 0,
+                        "tg": [],
+                        "icp": False,
+                        "nt": {"ch": 0, "_t": "tx", "t": 0, "v": ""},
+                        "do": 0,
+                        "dl": [],
+                        "lai": None,
+                        "dd": None,
+                        "rt": [],
+                        "md": 1641234567,
+                        "ss": 0,
+                        "sr": None,
+                        "sp": None,
+                        "st": 1,
+                        "icc": 0,
+                        "ato": None,
+                        "sb": 0,
+                        "agr": [],
+                    },
+                    "e": "Task6",
+                    "t": 0,
+                }
+            },
+        ],
+        "current-item-index": 1234,
+        "schema": 301,
+        "start-total-content-size": 0,
+        "end-total-content-size": 1234567,
+        "latest-total-content-size": 1234567,
+    }
+
+    things._process_updates(data)
+    todos = things._items
+    assert len(todos) == 2
+    todo2 = todos[UUID2]
+    assert todo2._uuid == UUID2
+    assert todo2._title == "task 2"
+    todo3 = todos[UUID3]
+    assert todo3._uuid == UUID3
+    assert todo3._title == "task 3"
