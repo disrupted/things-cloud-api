@@ -63,14 +63,6 @@ class ThingsClient:
     def edit(self, uuid: str, item: TodoItem) -> None:
         self.__modify_todo(uuid, self._offset, item)
 
-    def complete(self, uuid: str) -> None:
-        item = TodoItem.complete()
-        self.edit(uuid, item)
-
-    def delete(self, uuid: str) -> None:
-        item = TodoItem.delete()
-        self.edit(uuid, item)
-
     def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
             return self._client.request(method, endpoint, **kwargs)
@@ -114,17 +106,23 @@ class ThingsClient:
 
         try:
             self._offset = self.__commit(index, data)
+            item.reset_changes()
             return uuid
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e
 
     def __modify_todo(self, uuid: str, index: int, item: TodoItem) -> None:
-        data = {uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, item.changes)}}
+        changes = item.changes
+        if not changes:
+            log.warning("there are no changes to be sent")
+            return
+        data = {uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, changes)}}
         log.debug("", data=data)
 
         try:
             self._offset = self.__commit(index, data)
+            item.reset_changes()
         except ThingsCloudException as e:
             log.error("Error modifying todo")
             raise e
