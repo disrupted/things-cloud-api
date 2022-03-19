@@ -48,7 +48,7 @@ class TodoItem:
     tir: datetime | None = field(default=None)  # same as scheduled_date?
     completion_date: datetime | None = field(default=None)
     due_date: datetime | None = field(default=None)
-    in_trash: bool = field(default=False)
+    trashed: bool = field(default=False)
     is_project: bool = field(default=False)
     _projects: list[str] = field(factory=list)
     _areas: list[str] = field(factory=list)
@@ -192,15 +192,15 @@ class TodoItem:
         self._changes.append("completion_date")
         self.modify()
 
-    # @staticmethod
-    # def delete() -> TodoItem:
-    #     item = TodoItem(in_trash=True, modification_date=Util.now())
-    #     return item.copy(include={"in_trash", "modification_date"})
+    def delete(self) -> None:
+        self._changes.append("trashed")
+        self.trashed = True
+        self.modify()
 
-    # @staticmethod
-    # def restore() -> TodoItem:
-    #     item = TodoItem(in_trash=False, modification_date=Util.now())
-    #     return item.copy(include={"in_trash", "modification_date"})
+    def restore(self) -> None:
+        self._changes.append("trashed")
+        self.trashed = False
+        self.modify()
 
     # @staticmethod
     # def set_due_date(deadline: datetime) -> TodoItem:
