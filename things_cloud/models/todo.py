@@ -85,7 +85,7 @@ class TodoItem:
 
     def modify(self) -> None:
         self._modification_date = Util.now()
-        self._changes.append("modification_date")
+        self._changes.append("_modification_date")
 
     @property
     def title(self) -> str:
@@ -125,6 +125,8 @@ class TodoItem:
         self._projects = [project]
         if self.area:
             self.area = None
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.ANYTIME
 
     @property
     def area(self) -> str | None:
@@ -140,6 +142,8 @@ class TodoItem:
         self._areas = [area]
         if self.project:
             self.project = None
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.ANYTIME
 
     def todo(self) -> None:
         self._status = Status.TODO
@@ -313,6 +317,10 @@ ALIASES = {
     "_rr": "rr",
     "_note": "nt",
 }
+
+
+def get_changes(todo: TodoItem) -> dict:
+    return serialize_dict(todo, todo.changes)
 
 
 def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
