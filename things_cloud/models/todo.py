@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, time
 from enum import Enum
-from typing import Any
+from typing import Any, Deque
 
-from pydantic import BaseModel, Field
+import cattrs
+from attrs import define, field
+from cattrs.gen import make_dict_unstructure_fn, override
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -25,200 +27,305 @@ class Status(int, Enum):
     COMPLETE = 3
 
 
-class Note(BaseModel):
-    _t: str = Field("tx", alias="_t")
-    ch: int = Field(0, alias="ch")
-    value: str = Field("", alias="v")
-    t: int = Field(0, alias="t")
-
-    class Config:
-        allow_population_by_field_name = True
+@define
+class Note:
+    _t: str = field(init=False, default="tx")
+    ch: int = 0
+    v: str = ""  # value
+    t: int = 0
 
 
-class TodoItem(BaseModel):
-    index: int = Field(0, alias="ix")
-    title: str = Field("", alias="tt")
-    status: Status = Field(Status.TODO, alias="ss")
-    destination: Destination = Field(Destination.INBOX, alias="st")
-    creation_date: datetime | None = Field(None, alias="cd")
-    modification_date: datetime | None = Field(None, alias="md")
-    scheduled_date: datetime | None = Field(None, alias="sr")
-    tir: datetime | None = Field(None, alias="tir")  # same as scheduled_date?
-    completion_date: datetime | None = Field(None, alias="sp")
-    due_date: datetime | None = Field(None, alias="dd")
-    in_trash: bool = Field(False, alias="tr")
-    is_project: bool = Field(False, alias="icp")
-    projects: list[str] = Field(default_factory=list, alias="pr")
-    areas: list[Any] = Field(default_factory=list, alias="ar")
-    is_evening: bool = Field(False, alias="sb")
-    tags: list[Any] = Field(default_factory=list, alias="tg")
-    tp: int = Field(0, alias="tp")  # 0: todo, 1: project?
-    dds: None = Field(None, alias="dds")
-    rt: list[Any] = Field(default_factory=list, alias="rt")
-    rmd: None = Field(None, alias="rmd")
-    dl: list[Any] = Field(default_factory=list, alias="dl")
-    do: int = Field(0, alias="do")
-    lai: None = Field(None, alias="lai")
-    agr: list[Any] = Field(default_factory=list, alias="agr")
-    lt: bool = Field(False, alias="lt")
-    icc: int = Field(0, alias="icc")
-    ti: int = Field(0, alias="ti")  # position/order of items
-    reminder: time | None = Field(None, alias="ato")
-    icsd: None = Field(None, alias="icsd")
-    rp: None = Field(None, alias="rp")
-    acrd: None = Field(None, alias="acrd")
-    rr: None = Field(None, alias="rr")
-    note: Note = Field(default_factory=Note, alias="nt")
+@define
+class TodoItem:
+    _index: int = field(default=0, init=False)
+    _title: str = field(default="")
+    _status: Status = field(default=Status.TODO, init=False)
+    _destination: Destination = field(default=Destination.INBOX, init=False)
+    _creation_date: datetime | None = field(factory=Util.now, init=False)
+    _modification_date: datetime | None = field(factory=Util.now, init=False)
+    _scheduled_date: datetime | None = field(default=None, init=False)
+    _tir: datetime | None = field(default=None, init=False)  # same as scheduled_date?
+    _completion_date: datetime | None = field(default=None, init=False)
+    _due_date: datetime | None = field(default=None, init=False)
+    _trashed: bool = field(default=False, init=False)
+    _is_project: bool = field(default=False, init=False)
+    _projects: list[str] = field(factory=list, init=False)
+    _areas: list[str] = field(factory=list, init=False)
+    _is_evening: bool = field(default=False, converter=int, init=False)
+    _tags: list[Any] = field(factory=list, init=False)
+    _tp: int = field(default=0, init=False)  # 0: todo, 1: project?
+    _dds: None = field(default=None, init=False)
+    _rt: list[Any] = field(factory=list, init=False)
+    _rmd: None = field(default=None, init=False)
+    _dl: list[Any] = field(factory=list, init=False)
+    _do: int = field(default=0, init=False)
+    _lai: None = field(default=None, init=False)
+    _agr: list[Any] = field(factory=list, init=False)
+    _lt: bool = field(default=False, init=False)
+    _icc: int = field(default=0, init=False)
+    _ti: int = field(default=0, init=False)  # position/order of items
+    _reminder: time | None = field(default=None, init=False)
+    _icsd: None = field(default=None, init=False)
+    _rp: None = field(default=None, init=False)
+    _acrd: None = field(default=None, init=False)
+    _rr: None = field(default=None, init=False)
+    _note: Note = field(factory=Note, init=False)
+    _changes: Deque[str] = field(factory=Deque)
 
-    class Config:
-        allow_population_by_field_name = True
-        json_loads = SERDE.deserialize
-        json_dumps = SERDE.serialize
+    @property
+    def changes(self) -> set:
+        return set(self._changes)
 
-    def serialize(self) -> str:
-        return self.json(by_alias=True)
+    def reset_changes(self) -> None:
+        self._changes.clear()
 
-    def serialize_dict(self) -> dict:
-        return SERDE.deserialize(self.serialize())
+    # @changes.deleter
+    # def changes(self) -> None:
+    #     self._changes.clear()
+
+    def modify(self) -> None:
+        self._modification_date = Util.now()
+        self._changes.append("_modification_date")
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self.modify()
+        self._changes.append("_title")
+        self._title = title
+
+    @property
+    def status(self) -> Status:
+        return self._status
+
+    @property
+    def destination(self) -> Destination:
+        return self._destination
+
+    @destination.setter
+    def destination(self, destination: Destination) -> None:
+        self.modify()
+        self._changes.append("_destination")
+        self._destination = destination
 
     @property
     def project(self) -> str | None:
-        return self.projects[0] if self.projects else None
+        return self._projects[0] if self._projects else None
 
-    # HACK: ugly java-esque workaround because pydantic doesn't support property setters :(
-    def set_project(self, project: str) -> None:
-        self.areas.clear()
-        self.projects = [project]
+    @project.setter
+    def project(self, project: str | None) -> None:
+        self.modify()
+        self._changes.append("_projects")
+        if not project:
+            self._projects.clear()
+            return
+        self._projects = [project]
+        if self.area:
+            self.area = None
         if self.destination == Destination.INBOX:
-            self.destination = Destination.SOMEDAY
+            self.destination = Destination.ANYTIME
 
     @property
     def area(self) -> str | None:
-        return self.areas[0] if self.areas else None
+        return self._areas[0] if self._areas else None
 
-    # HACK
-    def set_area(self, area: str) -> None:
-        self.projects.clear()
-        self.areas = [area]
+    @area.setter
+    def area(self, area: str | None) -> None:
+        self.modify()
+        self._changes.append("_areas")
+        if not area:
+            self._areas.clear()
+            return
+        self._areas = [area]
+        if self.project:
+            self.project = None
         if self.destination == Destination.INBOX:
-            self.destination = Destination.SOMEDAY
+            self.destination = Destination.ANYTIME
 
-    @staticmethod
-    def create(title: str, destination: Destination) -> TodoItem:
-        now = Util.now()
-        return TodoItem(
-            title=title,
-            destination=destination,
-            creation_date=now,
-            modification_date=now,
-        )
+    def todo(self) -> None:
+        self._status = Status.TODO
+        self._changes.append("_status")
+        self.completion_date = None
 
-    @staticmethod
-    def create_project(title: str) -> TodoItem:
-        now = Util.now()
-        return TodoItem(
-            title=title,
-            destination=Destination.ANYTIME,
-            creation_date=now,
-            modification_date=now,
-            is_project=True,
-            tp=1,
-        )
+    def complete(self) -> None:
+        self._status = Status.COMPLETE
+        self._changes.append("_status")
+        self.completion_date = Util.now()
 
-    @staticmethod
-    def todo() -> TodoItem:
-        item = TodoItem(
-            status=Status.TODO, modification_date=Util.now(), completion_date=None
-        )
-        return item.copy(include={"status", "modification_date", "completion_date"})
+    def cancel(self) -> None:
+        self._status = Status.CANCELLED
+        self._changes.append("_status")
+        self.completion_date = Util.now()
 
-    @staticmethod
-    def complete() -> TodoItem:
-        now = Util.now()
-        item = TodoItem(
-            status=Status.COMPLETE, modification_date=now, completion_date=now
-        )
-        return item.copy(include={"status", "modification_date", "completion_date"})
+    def delete(self) -> None:
+        self._changes.append("_trashed")
+        self._trashed = True
+        self.modify()
 
-    @staticmethod
-    def cancel() -> TodoItem:
-        now = Util.now()
-        item = TodoItem(
-            status=Status.CANCELLED, modification_date=now, completion_date=now
-        )
-        return item.copy(include={"status", "modification_date", "completion_date"})
+    def restore(self) -> None:
+        self._changes.append("_trashed")
+        self._trashed = False
+        self.modify()
 
-    @staticmethod
-    def delete() -> TodoItem:
-        item = TodoItem(in_trash=True, modification_date=Util.now())
-        return item.copy(include={"in_trash", "modification_date"})
+    def as_project(self) -> TodoItem:
+        self._is_project = True
+        self._changes.append("_is_project")
+        self._tp = 1
+        self._changes.append("_tp")
+        if self.destination == Destination.INBOX:
+            self.destination = Destination.ANYTIME
+        self.modify()
+        return self
 
-    @staticmethod
-    def restore() -> TodoItem:
-        item = TodoItem(in_trash=False, modification_date=Util.now())
-        return item.copy(include={"in_trash", "modification_date"})
+    @property
+    def completion_date(self) -> datetime | None:
+        return self._completion_date
 
-    @staticmethod
-    def set_due_date(deadline: datetime) -> TodoItem:
-        item = TodoItem(due_date=deadline, modification_date=Util.now())
-        return item.copy(include={"due_date", "modification_date"})
+    @completion_date.setter
+    def completion_date(self, completion_date: datetime | None) -> None:
+        self._changes.append("_completion_date")
+        self._completion_date = completion_date
+        self.modify()
 
-    @staticmethod
-    def clear_due_date() -> TodoItem:
-        item = TodoItem(due_date=None, modification_date=Util.now())
-        return item.copy(include={"due_date", "modification_date"})
+    @property
+    def scheduled_date(self) -> datetime | None:
+        return self._scheduled_date
 
-    @staticmethod
-    def set_reminder(reminder: time, scheduled_date: datetime) -> TodoItem:
-        item = TodoItem(
-            reminder=reminder,
-            scheduled_date=scheduled_date,
-            modification_date=Util.now(),
-        )
-        return item.copy(include={"reminder", "scheduled_date", "modification_date"})
+    @scheduled_date.setter
+    def scheduled_date(self, scheduled_date: datetime | None) -> None:
+        self._changes.append("_scheduled_date")
+        self._scheduled_date = scheduled_date
+        self._changes.append("_tir")
+        self._tir = scheduled_date
+        self.modify()
 
-    @staticmethod
-    def clear_reminder() -> TodoItem:
-        item = TodoItem(reminder=None, modification_date=Util.now())
-        return item.copy(include={"reminder", "modification_date"})
+    @property
+    def due_date(self) -> datetime | None:
+        return self._due_date
 
-    @staticmethod
-    def set_evening() -> TodoItem:
+    @due_date.setter
+    def due_date(self, deadline: datetime | None) -> None:
+        self._changes.append("_due_date")
+        self._due_date = deadline
+        self.modify()
+
+    @property
+    def reminder(self) -> time | None:
+        return self._reminder
+
+    @reminder.setter
+    def reminder(self, reminder: time | None) -> None:
+        self._changes.append("_reminder")
+        self._reminder = reminder
+        self.modify()
+
+    def evening(self) -> None:
         today = Util.today()
-        item = TodoItem(
-            destination=Destination.ANYTIME,
-            scheduled_date=today,
-            tir=today,
-            is_evening=1,
-            modification_date=Util.now(),
-        )
-        return item.copy(
-            include={
-                "destination",
-                "scheduled_date",
-                "tir",
-                "is_evening",
-                "modification_date",
-            }
-        )
+        self.destination = Destination.ANYTIME
+        self.scheduled_date = today
+        self._is_evening = True
+        self._changes.append("_is_evening")
+        self.modify()
 
-    @staticmethod
-    def set_destination(destination: Destination) -> TodoItem:
-        item = TodoItem(
-            destination=destination,
-            modification_date=Util.now(),
-        )
-        return item.copy(include={"destination", "modification_date"})
-
-    @staticmethod
-    def set_today() -> TodoItem:
+    def today(self) -> None:
         today = Util.today()
-        item = TodoItem(
-            destination=Destination.ANYTIME,
-            scheduled_date=today,
-            tir=today,
-            modification_date=Util.now(),
-        )
-        return item.copy(
-            include={"destination", "scheduled_date", "tir", "modification_date"}
-        )
+        self.destination = Destination.ANYTIME
+        self.scheduled_date = today
+        self.modify()
+
+
+converter = cattrs.Converter()
+# TODO
+todo_unst_hook = make_dict_unstructure_fn(
+    TodoItem,
+    converter,
+    _changes=override(omit=True),
+    # index=override(rename="ix"),
+    # title=override(rename="tt"),
+    # status=override(rename="ss"),
+    # destination=override(rename="st"),
+    # creation_date=override(rename="cd"),
+    # modification_date=override(rename="md"),
+    # scheduled_date=override(rename="sr"),
+    # tir=override(rename="tir"),  # same as scheduled_date?
+    # completion_date=override(rename="sp"),
+    # due_date=override(rename="dd"),
+    # in_trash=override(rename="tr"),
+    # is_project=override(rename="icp"),
+    # projects=override(rename="pr"),
+    # areas=override(rename="ar"),
+    # is_evening=override(rename="sb"),
+    # tags=override(rename="tg"),
+    # tp=override(rename="tp"),  # 0: todo, 1: project?
+    # dds=override(rename="dds"),
+    # rt=override(rename="rt"),
+    # rmd=override(rename="rmd"),
+    # dl=override(rename="dl"),
+    # do=override(rename="do"),
+    # lai=override(rename="lai"),
+    # agr=override(rename="agr"),
+    # lt=override(rename="lt"),
+    # icc=override(rename="icc"),
+    # ti=override(rename="ti"),  # position/order of items
+    # reminder=override(rename="ato"),
+    # icsd=override(rename="icsd"),
+    # rp=override(rename="rp"),
+    # acrd=override(rename="acrd"),
+    # rr=override(rename="rr"),
+    # note=override(rename="nt"),
+)
+
+
+converter.register_unstructure_hook(TodoItem, todo_unst_hook)
+
+converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
+
+ALIASES = {
+    "_index": "ix",
+    "_title": "tt",
+    "_status": "ss",
+    "_destination": "st",
+    "_creation_date": "cd",
+    "_modification_date": "md",
+    "_scheduled_date": "sr",
+    "_tir": "tir",  # same as scheduled_date?
+    "_completion_date": "sp",
+    "_due_date": "dd",
+    "_trashed": "tr",
+    "_is_project": "icp",
+    "_projects": "pr",
+    "_areas": "ar",
+    "_is_evening": "sb",
+    "_tags": "tg",
+    "_tp": "tp",  # 0: todo, 1: project?
+    "_dds": "dds",
+    "_rt": "rt",
+    "_rmd": "rmd",
+    "_dl": "dl",
+    "_do": "do",
+    "_lai": "lai",
+    "_agr": "agr",
+    "_lt": "lt",
+    "_icc": "icc",
+    "_ti": "ti",  # position/order of items
+    "_reminder": "ato",
+    "_icsd": "icsd",
+    "_rp": "rp",
+    "_acrd": "acrd",
+    "_rr": "rr",
+    "_note": "nt",
+}
+
+
+def get_changes(todo: TodoItem) -> dict:
+    return serialize_dict(todo, todo.changes)
+
+
+def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
+    # d = asdict(todo)
+    d = converter.unstructure(todo)
+    # filter allowed keys
+    return {ALIASES[k]: v for k, v in d.items() if keys is None or k in keys}

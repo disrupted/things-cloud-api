@@ -5,7 +5,7 @@ from structlog import get_logger
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
 from things_cloud.models.serde import JsonSerde
-from things_cloud.models.todo import TodoItem
+from things_cloud.models.todo import TodoItem, serialize_dict
 from things_cloud.utils import Util
 
 log = get_logger()
@@ -57,19 +57,11 @@ class ThingsClient:
 
     def create(self, item: TodoItem) -> str:
         self.update()
-        item.index = self._offset + 1
+        item._index = self._offset + 1
         return self.__create_todo(self._offset, item)
 
     def edit(self, uuid: str, item: TodoItem) -> None:
         self.__modify_todo(uuid, self._offset, item)
-
-    def complete(self, uuid: str) -> None:
-        item = TodoItem.complete()
-        self.edit(uuid, item)
-
-    def delete(self, uuid: str) -> None:
-        item = TodoItem.delete()
-        self.edit(uuid, item)
 
     def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
@@ -109,22 +101,28 @@ class ThingsClient:
 
     def __create_todo(self, index: int, item: TodoItem) -> str:
         uuid = Util.uuid()
-        data = {uuid: {"t": 0, "e": "Task6", "p": item.serialize_dict()}}
+        data = {uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
         log.debug("", data=data)
 
         try:
             self._offset = self.__commit(index, data)
+            item.reset_changes()
             return uuid
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e
 
     def __modify_todo(self, uuid: str, index: int, item: TodoItem) -> None:
-        data = {uuid: {"t": 1, "e": "Task6", "p": item.serialize_dict()}}
+        changes = item.changes
+        if not changes:
+            log.warning("there are no changes to be sent")
+            return
+        data = {uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, changes)}}
         log.debug("", data=data)
 
         try:
             self._offset = self.__commit(index, data)
+            item.reset_changes()
         except ThingsCloudException as e:
             log.error("Error modifying todo")
             raise e

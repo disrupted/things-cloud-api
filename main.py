@@ -4,7 +4,7 @@ from time import sleep
 from structlog import get_logger
 
 from things_cloud import ThingsClient
-from things_cloud.models import Destination, TodoItem
+from things_cloud.models import TodoItem
 
 log = get_logger()
 
@@ -13,17 +13,23 @@ OFFSET = int(os.environ.get("THINGS_OFFSET", 0))
 
 
 def main():
-    log.debug("initial offset", offset=OFFSET)
     things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
-    log.debug("current index", offset=things.offset)
-    todo = TodoItem.create("Try out Things Cloud", Destination.INBOX)
+
+    # create a project
+    project = TodoItem("Things Cloud Project").as_project()
+    project_uuid = things.create(project)
+    log.debug("created project", uuid=project_uuid)
+
+    sleep(10)
+    # create a todo inside project
+    todo = TodoItem("Try out Things Cloud")
+    todo.project = project_uuid
     uuid = things.create(todo)
-    log.debug("created todo", uuid=uuid)
 
-    things.edit(uuid, TodoItem.set_today())
-
-    sleep(2)
-    things.edit(uuid, TodoItem.complete())
+    sleep(10)
+    # schedule for today
+    todo.today()
+    things.edit(uuid, todo)
 
 
 if __name__ == "__main__":
