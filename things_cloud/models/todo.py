@@ -42,8 +42,8 @@ class TodoItem:
     _title: str = field(default="")
     status: Status = field(default=Status.TODO, init=False)
     _destination: Destination = field(default=Destination.INBOX)
-    creation_date: datetime | None = field(default=None)
-    modification_date: datetime | None = field(default=None)
+    creation_date: datetime | None = field(factory=Util.now, init=False)
+    modification_date: datetime | None = field(factory=Util.now, init=False)
     scheduled_date: datetime | None = field(default=None)
     tir: datetime | None = field(default=None)  # same as scheduled_date?
     completion_date: datetime | None = field(default=None)
@@ -148,15 +148,14 @@ class TodoItem:
         if self.destination == Destination.INBOX:
             self.destination = Destination.SOMEDAY
 
-    @staticmethod
-    def create(title: str, destination: Destination) -> TodoItem:
-        now = Util.now()
-        return TodoItem(
-            title,
-            destination,
-            creation_date=now,
-            modification_date=now,
-        )
+    # @staticmethod
+    # def create(title: str, destination: Destination) -> TodoItem:
+    #     now = Util.now()
+    #     item = TodoItem()
+    #         item.title,
+    #         destination,
+    #         creation_date=now,
+    #         modification_date=now,
 
     @staticmethod
     def create_project(title: str) -> TodoItem:

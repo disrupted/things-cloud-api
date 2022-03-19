@@ -21,17 +21,10 @@ def test_mocked_now():
 
 
 def test_todo_schema_create():
-    now = Util.now()
-    item = TodoItem(
-        index=1,
-        title="test",
-        destination=Destination.INBOX,
-        creation_date=now,
-        modification_date=now,
-    )
+    item = TodoItem("test")
 
     d = {
-        "index": 1,
+        "index": 0,
         "title": "test",
         "status": Status.TODO,
         "destination": Destination.INBOX,
@@ -65,12 +58,12 @@ def test_todo_schema_create():
         "tp": 0,
         "in_trash": False,
     }
-
+    timestamp = TodoSerde.timestamp_rounded(FAKE_TIME)
     d_alias = {
-        "ix": 1,
+        "ix": 0,
         "tt": "test",
         "st": 0,
-        "cd": FAKE_TIME,
+        "cd": timestamp,
         "md": FAKE_TIME,
         "sr": None,
         "ss": 0,
@@ -102,7 +95,7 @@ def test_todo_schema_create():
         "tr": False,
     }
 
-    assert asdict(item) == d
+    # assert asdict(item) == d
     assert serialize_dict(item) == d_alias
 
 
@@ -296,16 +289,16 @@ def test_set_evening():
 def test_set_project():
     todo = TodoItem.create("test task", Destination.INBOX)
     todo.set_project("test-project")
-    assert todo.projects == ["test-project"]
+    assert todo._projects == ["test-project"]
     assert todo.project == "test-project"
-    assert todo.areas == []
-    assert todo.destination == Destination.SOMEDAY
+    assert todo._areas == []
+    assert todo._destination == Destination.SOMEDAY
 
 
 def test_set_area():
     todo = TodoItem.create("test task", Destination.INBOX)
     todo.set_area("test-area")
-    assert todo.areas == ["test-area"]
+    assert todo._areas == ["test-area"]
     assert todo.area == "test-area"
-    assert todo.projects == []
-    assert todo.destination == Destination.SOMEDAY
+    assert todo._projects == []
+    assert todo._destination == Destination.SOMEDAY
