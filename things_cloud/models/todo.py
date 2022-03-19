@@ -42,11 +42,11 @@ class TodoItem:
     _title: str = field(default="")
     status: Status = field(default=Status.TODO, init=False)
     _destination: Destination = field(default=Destination.INBOX)
-    creation_date: datetime | None = field(factory=Util.now, init=False)
-    modification_date: datetime | None = field(factory=Util.now, init=False)
+    _creation_date: datetime | None = field(factory=Util.now, init=False)
+    _modification_date: datetime | None = field(factory=Util.now, init=False)
     _scheduled_date: datetime | None = field(default=None)
     _tir: datetime | None = field(default=None)  # same as scheduled_date?
-    completion_date: datetime | None = field(default=None)
+    _completion_date: datetime | None = field(default=None)
     _due_date: datetime | None = field(default=None)
     trashed: bool = field(default=False)
     is_project: bool = field(default=False)
@@ -91,7 +91,7 @@ class TodoItem:
     #     self._changes.clear()
 
     def modify(self) -> None:
-        self.modification_date = Util.now()
+        self._modification_date = Util.now()
         self._changes.append("modification_date")
 
     @property
@@ -175,21 +175,18 @@ class TodoItem:
         self.status = Status.TODO
         self._changes.append("status")
         self.completion_date = None
-        self._changes.append("completion_date")
         self.modify()
 
     def complete(self) -> None:
         self.status = Status.COMPLETE
         self._changes.append("status")
         self.completion_date = Util.now()
-        self._changes.append("completion_date")
         self.modify()
 
     def cancel(self) -> None:
         self.status = Status.CANCELLED
         self._changes.append("status")
         self.completion_date = Util.now()
-        self._changes.append("completion_date")
         self.modify()
 
     def delete(self) -> None:
@@ -200,6 +197,16 @@ class TodoItem:
     def restore(self) -> None:
         self._changes.append("trashed")
         self.trashed = False
+        self.modify()
+
+    @property
+    def completion_date(self) -> datetime | None:
+        return self._completion_date
+
+    @completion_date.setter
+    def completion_date(self, completion_date: datetime | None) -> None:
+        self._changes.append("_completion_date")
+        self._completion_date = completion_date
         self.modify()
 
     @property
@@ -298,11 +305,11 @@ ALIASES = {
     "_title": "tt",
     "status": "ss",
     "_destination": "st",
-    "creation_date": "cd",
-    "modification_date": "md",
+    "_creation_date": "cd",
+    "_modification_date": "md",
     "_scheduled_date": "sr",
     "_tir": "tir",  # same as scheduled_date?
-    "completion_date": "sp",
+    "_completion_date": "sp",
     "_due_date": "dd",
     "trashed": "tr",
     "is_project": "icp",
