@@ -37,39 +37,39 @@ class Note:
 
 @define
 class TodoItem:
-    index: int = field(default=0, init=False)
+    _index: int = field(default=0, init=False)
     _title: str = field(default="")
-    status: Status = field(default=Status.TODO, init=False)
-    _destination: Destination = field(default=Destination.INBOX)
+    _status: Status = field(default=Status.TODO, init=False)
+    _destination: Destination = field(default=Destination.INBOX, init=False)
     _creation_date: datetime | None = field(factory=Util.now, init=False)
     _modification_date: datetime | None = field(factory=Util.now, init=False)
-    _scheduled_date: datetime | None = field(default=None)
-    _tir: datetime | None = field(default=None)  # same as scheduled_date?
-    _completion_date: datetime | None = field(default=None)
-    _due_date: datetime | None = field(default=None)
-    trashed: bool = field(default=False)
+    _scheduled_date: datetime | None = field(default=None, init=False)
+    _tir: datetime | None = field(default=None, init=False)  # same as scheduled_date?
+    _completion_date: datetime | None = field(default=None, init=False)
+    _due_date: datetime | None = field(default=None, init=False)
+    _trashed: bool = field(default=False, init=False)
     _is_project: bool = field(default=False, init=False)
-    _projects: list[str] = field(factory=list)
-    _areas: list[str] = field(factory=list)
-    is_evening: bool = field(default=False, converter=int)
-    tags: list[Any] = field(factory=list)
+    _projects: list[str] = field(factory=list, init=False)
+    _areas: list[str] = field(factory=list, init=False)
+    _is_evening: bool = field(default=False, converter=int, init=False)
+    _tags: list[Any] = field(factory=list, init=False)
     _tp: int = field(default=0, init=False)  # 0: todo, 1: project?
-    dds: None = field(default=None)
-    rt: list[Any] = field(factory=list)
-    rmd: None = field(default=None)
-    dl: list[Any] = field(factory=list)
-    do: int = field(default=0)
-    lai: None = field(default=None)
-    agr: list[Any] = field(factory=list)
-    lt: bool = field(default=False)
-    icc: int = field(default=0)
-    ti: int = field(default=0)  # position/order of items
-    _reminder: time | None = field(default=None)
-    icsd: None = field(default=None)
-    rp: None = field(default=None)
-    acrd: None = field(default=None)
-    rr: None = field(default=None)
-    note: Note = field(factory=Note)
+    _dds: None = field(default=None, init=False)
+    _rt: list[Any] = field(factory=list, init=False)
+    _rmd: None = field(default=None, init=False)
+    _dl: list[Any] = field(factory=list, init=False)
+    _do: int = field(default=0, init=False)
+    _lai: None = field(default=None, init=False)
+    _agr: list[Any] = field(factory=list, init=False)
+    _lt: bool = field(default=False, init=False)
+    _icc: int = field(default=0, init=False)
+    _ti: int = field(default=0, init=False)  # position/order of items
+    _reminder: time | None = field(default=None, init=False)
+    _icsd: None = field(default=None, init=False)
+    _rp: None = field(default=None, init=False)
+    _acrd: None = field(default=None, init=False)
+    _rr: None = field(default=None, init=False)
+    _note: Note = field(factory=Note, init=False)
     _changes = Deque()
 
     @property
@@ -94,8 +94,12 @@ class TodoItem:
     @title.setter
     def title(self, title: str) -> None:
         self.modify()
-        self._changes.append("title")
+        self._changes.append("_title")
         self._title = title
+
+    @property
+    def status(self) -> Status:
+        return self._status
 
     @property
     def destination(self) -> Destination:
@@ -138,31 +142,28 @@ class TodoItem:
             self.project = None
 
     def todo(self) -> None:
-        self.status = Status.TODO
-        self._changes.append("status")
+        self._status = Status.TODO
+        self._changes.append("_status")
         self.completion_date = None
-        self.modify()
 
     def complete(self) -> None:
-        self.status = Status.COMPLETE
-        self._changes.append("status")
+        self._status = Status.COMPLETE
+        self._changes.append("_status")
         self.completion_date = Util.now()
-        self.modify()
 
     def cancel(self) -> None:
-        self.status = Status.CANCELLED
-        self._changes.append("status")
+        self._status = Status.CANCELLED
+        self._changes.append("_status")
         self.completion_date = Util.now()
-        self.modify()
 
     def delete(self) -> None:
-        self._changes.append("trashed")
-        self.trashed = True
+        self._changes.append("_trashed")
+        self._trashed = True
         self.modify()
 
     def restore(self) -> None:
-        self._changes.append("trashed")
-        self.trashed = False
+        self._changes.append("_trashed")
+        self._trashed = False
         self.modify()
 
     def as_project(self) -> TodoItem:
@@ -221,8 +222,8 @@ class TodoItem:
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
-        self.is_evening = True
-        self._changes.append("is_evening")
+        self._is_evening = True
+        self._changes.append("_is_evening")
         self.modify()
 
     def today(self) -> None:
@@ -278,9 +279,9 @@ todo_unst_hook = make_dict_unstructure_fn(
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 
 ALIASES = {
-    "index": "ix",
+    "_index": "ix",
     "_title": "tt",
-    "status": "ss",
+    "_status": "ss",
     "_destination": "st",
     "_creation_date": "cd",
     "_modification_date": "md",
@@ -288,29 +289,29 @@ ALIASES = {
     "_tir": "tir",  # same as scheduled_date?
     "_completion_date": "sp",
     "_due_date": "dd",
-    "trashed": "tr",
+    "_trashed": "tr",
     "_is_project": "icp",
     "_projects": "pr",
     "_areas": "ar",
-    "is_evening": "sb",
-    "tags": "tg",
+    "_is_evening": "sb",
+    "_tags": "tg",
     "_tp": "tp",  # 0: todo, 1: project?
-    "dds": "dds",
-    "rt": "rt",
-    "rmd": "rmd",
-    "dl": "dl",
-    "do": "do",
-    "lai": "lai",
-    "agr": "agr",
-    "lt": "lt",
-    "icc": "icc",
-    "ti": "ti",  # position/order of items
+    "_dds": "dds",
+    "_rt": "rt",
+    "_rmd": "rmd",
+    "_dl": "dl",
+    "_do": "do",
+    "_lai": "lai",
+    "_agr": "agr",
+    "_lt": "lt",
+    "_icc": "icc",
+    "_ti": "ti",  # position/order of items
     "_reminder": "ato",
-    "icsd": "icsd",
-    "rp": "rp",
-    "acrd": "acrd",
-    "rr": "rr",
-    "note": "nt",
+    "_icsd": "icsd",
+    "_rp": "rp",
+    "_acrd": "acrd",
+    "_rr": "rr",
+    "_note": "nt",
 }
 
 

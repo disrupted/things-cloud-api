@@ -57,7 +57,7 @@ class ThingsClient:
 
     def create(self, item: TodoItem) -> str:
         self.update()
-        item.index = self._offset + 1
+        item._index = self._offset + 1
         return self.__create_todo(self._offset, item)
 
     def edit(self, uuid: str, item: TodoItem) -> None:
