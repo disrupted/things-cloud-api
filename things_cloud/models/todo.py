@@ -6,7 +6,7 @@ from typing import Any, Deque
 
 import cattrs
 from attrs import define, field
-from cattrs.gen import make_dict_unstructure_fn
+from cattrs.gen import make_dict_unstructure_fn, override
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -70,7 +70,7 @@ class TodoItem:
     _acrd: None = field(default=None, init=False)
     _rr: None = field(default=None, init=False)
     _note: Note = field(factory=Note, init=False)
-    _changes = Deque()
+    _changes: Deque[str] = field(factory=Deque)
 
     @property
     def changes(self) -> set:
@@ -242,6 +242,7 @@ converter = cattrs.Converter()
 todo_unst_hook = make_dict_unstructure_fn(
     TodoItem,
     converter,
+    _changes=override(omit=True),
     # index=override(rename="ix"),
     # title=override(rename="tt"),
     # status=override(rename="ss"),
@@ -278,7 +279,7 @@ todo_unst_hook = make_dict_unstructure_fn(
 )
 
 
-# converter.register_unstructure_hook(TodoItem, todo_unst_hook)
+converter.register_unstructure_hook(TodoItem, todo_unst_hook)
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 
