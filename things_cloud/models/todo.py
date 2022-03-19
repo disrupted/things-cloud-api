@@ -44,8 +44,8 @@ class TodoItem:
     _destination: Destination = field(default=Destination.INBOX)
     creation_date: datetime | None = field(factory=Util.now, init=False)
     modification_date: datetime | None = field(factory=Util.now, init=False)
-    scheduled_date: datetime | None = field(default=None)
-    tir: datetime | None = field(default=None)  # same as scheduled_date?
+    _scheduled_date: datetime | None = field(default=None)
+    _tir: datetime | None = field(default=None)  # same as scheduled_date?
     completion_date: datetime | None = field(default=None)
     _due_date: datetime | None = field(default=None)
     trashed: bool = field(default=False)
@@ -203,6 +203,18 @@ class TodoItem:
         self.modify()
 
     @property
+    def scheduled_date(self) -> datetime | None:
+        return self._scheduled_date
+
+    @scheduled_date.setter
+    def scheduled_date(self, scheduled_date: datetime | None) -> None:
+        self._changes.append("_scheduled_date")
+        self._scheduled_date = scheduled_date
+        self._changes.append("_tir")
+        self._tir = scheduled_date
+        self.modify()
+
+    @property
     def due_date(self) -> datetime | None:
         return self._due_date
 
@@ -226,15 +238,14 @@ class TodoItem:
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
-        self.tir = today
         self.is_evening = True
+        self._changes.append("is_evening")
         self.modify()
 
     def today(self) -> None:
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
-        self.tir = today
         self.modify()
 
 
@@ -289,8 +300,8 @@ ALIASES = {
     "_destination": "st",
     "creation_date": "cd",
     "modification_date": "md",
-    "scheduled_date": "sr",
-    "tir": "tir",  # same as scheduled_date?
+    "_scheduled_date": "sr",
+    "_tir": "tir",  # same as scheduled_date?
     "completion_date": "sp",
     "_due_date": "dd",
     "trashed": "tr",
