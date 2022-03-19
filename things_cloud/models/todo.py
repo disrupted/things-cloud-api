@@ -128,8 +128,6 @@ class TodoItem:
         self._projects = [project]
         if self.area:
             self.area = None
-        if self.destination == Destination.INBOX:
-            self.destination = Destination.SOMEDAY
 
     @property
     def area(self) -> str | None:
@@ -145,8 +143,6 @@ class TodoItem:
         self._areas = [area]
         if self.project:
             self.project = None
-        if self.destination == Destination.INBOX:
-            self.destination = Destination.SOMEDAY
 
     @staticmethod
     def create_project(title: str) -> TodoItem:
