@@ -3,9 +3,10 @@ from httpx import Request, RequestError, Response
 from structlog import get_logger
 
 from things_cloud.api.const import API_BASE, HEADERS
-from things_cloud.api.exceptions import ThingsCloudException
+from things_cloud.api.exceptions import ThingsCloudException, ThingsUpdateException
 from things_cloud.models.serde import JsonSerde
 from things_cloud.models.todo import TodoItem, deserialize, serialize_dict
+from things_cloud.utils import Util
 
 log = get_logger()
 
@@ -53,7 +54,7 @@ class ThingsClient:
         return self._offset
 
     def update(self):
-        self._offset = self.__get_current_index(self._offset)
+        self._offset = self.__fetch(self._offset)
 
     def create(self, item: TodoItem) -> str:
         self.update()
@@ -69,7 +70,7 @@ class ThingsClient:
         except RequestError as e:
             raise ThingsCloudException from e
 
-    def __get_current_index(self, index: int) -> int:
+    def __fetch(self, index: int) -> int:
         response = self.__request(
             "GET",
             "/items",
@@ -78,7 +79,9 @@ class ThingsClient:
             },
         )
         if response.status_code == 200:
-            return response.json()["current-item-index"]
+            data = response.json()
+            self._process_updates(data)
+            return data["current-item-index"]
         else:
             log.error("Error getting current index", response=response)
             raise ThingsCloudException
@@ -92,12 +95,15 @@ class ThingsClient:
         for uuid, update in updates.items():
             log.debug("found update", uuid=uuid, update=update)
             item = update["p"]
+            todo = deserialize(item)
+            todo._uuid = uuid
+            todos.append(todo)
             if update["t"] == 0:  # new todo
-                todo = deserialize(item)
-                todo._uuid = uuid
-                todos.append(todo)
-            if update["t"] == 1:  # edited todo
+                continue
+            elif update["t"] == 1:  # edited todo
                 continue  # TODO
+            else:
+                raise ThingsUpdateException
 
         return todos
 
@@ -118,14 +124,15 @@ class ThingsClient:
         return response.json()["server-head-index"]
 
     def __create_todo(self, index: int, item: TodoItem) -> str:
-        # uuid = Util.uuid()
-        data = {item.uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
+        uuid = Util.uuid()
+        item._uuid = uuid
+        data = {uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
         log.debug("", data=data)
 
         try:
             self._offset = self.__commit(index, data)
             item.reset_changes()
-            return item.uuid
+            return uuid
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e

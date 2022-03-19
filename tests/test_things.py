@@ -14,7 +14,7 @@ things = ThingsClient(ACCOUNT, initial_offset=123)
 def test_create():
     start_idx = things.offset
     assert start_idx == OFFSET
-    item = TodoItem(title="test_create", destination=Destination.ANYTIME)
+    item = TodoItem("test_create")
     new_idx = things.create(item)
     assert new_idx is not None
     assert new_idx == start_idx + 1
@@ -110,4 +110,31 @@ def test_process_new():
     assert todo._acrd is None
     assert todo._rr is None
     assert todo._note == Note()
+    assert not todo._changes
+
+
+def test_process_updated():
+    data = {
+        "items": [
+            {
+                "aBCDiHyah4Uf0MQqp11jsX": {
+                    "p": {"md": 1641234567.123456, "tt": "test updated"},
+                    "e": "Task6",
+                    "t": 1,
+                }
+            }
+        ],
+        "current-item-index": 1234,
+        "schema": 301,
+        "start-total-content-size": 0,
+        "end-total-content-size": 1234567,
+        "latest-total-content-size": 1234567,
+    }
+
+    todos = things._process_updates(data)
+    assert len(todos) == 1
+    todo = todos[0]
+    assert todo._uuid == "aBCDiHyah4Uf0MQqp11jsX"
+    assert todo._title == "test updated"
+    assert todo._modification_date == datetime(2022, 1, 3, 19, 29, 27, 123456)
     assert not todo._changes

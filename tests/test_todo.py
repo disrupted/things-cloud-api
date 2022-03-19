@@ -186,7 +186,6 @@ def test_deserialize():
     }
     todo = deserialize(api_object)
     time = dt.datetime(2022, 1, 3, 19, 29, 27)
-    assert todo._uuid
     assert todo._index == 1234
     assert todo._title == "test task"
     assert todo._status == Status.TODO
