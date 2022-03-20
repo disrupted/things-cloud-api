@@ -155,8 +155,11 @@ class TodoItem:
             self._areas.clear()
             return
         self._areas = [area]
+
+        # clear project
         if self.project:
             self.project = None
+        # move out of inbox
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
 
