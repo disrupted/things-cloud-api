@@ -208,6 +208,36 @@ def test_clear_area():
     }
 
 
+def test_today():
+    todo = TodoItem("test task")
+    todo.today()
+    assert todo.destination == Destination.ANYTIME
+    assert todo.scheduled_date == Util.today()
+    assert todo._tir == Util.today()
+    assert todo.changes == {
+        "_destination",
+        "_scheduled_date",
+        "_tir",
+        "_modification_date",
+    }
+
+
+def test_evening():
+    todo = TodoItem("test task")
+    todo.evening()
+    assert todo.destination == Destination.ANYTIME
+    assert todo.scheduled_date == Util.today()
+    assert todo._tir == Util.today()
+    assert todo._is_evening == 1
+    assert todo.changes == {
+        "_destination",
+        "_scheduled_date",
+        "_tir",
+        "_is_evening",
+        "_modification_date",
+    }
+
+
 def test_deserialize():
     api_object = {
         "ix": 1234,
