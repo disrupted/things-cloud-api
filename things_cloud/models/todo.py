@@ -122,15 +122,24 @@ class TodoItem:
         return self._projects[0] if self._projects else None
 
     @project.setter
-    def project(self, project: str | None) -> None:
+    def project(self, project: TodoItem | str | None) -> None:
+        if isinstance(project, TodoItem):
+            if not project._is_project:
+                raise ValueError("argument must be a project")
+            self._projects = [project.uuid]
+        elif project:
+            self._projects = [project]
         self.modify()
         self._changes.append("_projects")
+
         if not project:
             self._projects.clear()
             return
-        self._projects = [project]
+
+        # clear area
         if self.area:
             self.area = None
+        # move out of inbox
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
 
