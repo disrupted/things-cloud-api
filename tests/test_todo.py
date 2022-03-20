@@ -118,7 +118,7 @@ def test_as_project():
     }
 
 
-def test_assign_project():
+def test_assign_project_uuid():
     todo = TodoItem("test task")
     todo.project = "test-project"
     assert todo._projects == ["test-project"]
@@ -133,7 +133,51 @@ def test_assign_project():
     }
 
 
-def test_assign_area():
+def test_assign_project_item():
+    project = TodoItem("test project").as_project()
+    todo = TodoItem("test task")
+    todo.project = project
+    assert todo._projects == [project.uuid]
+    assert todo.project == project.uuid
+    assert isinstance(todo.project, str)
+    assert todo._areas == []
+    assert todo.area is None
+    assert todo.destination == Destination.ANYTIME
+    assert todo.changes == {
+        "_destination",
+        "_projects",
+        "_modification_date",
+    }
+
+
+def test_assign_project_invalid():
+    not_project = TodoItem("not project")
+    todo = TodoItem("test task")
+    with pytest.raises(ValueError):
+        todo.project = not_project
+    assert not todo.project
+    assert not todo.area
+    assert not todo.destination
+    assert not todo.changes
+
+
+def test_clear_project():
+    todo = TodoItem("test task")
+    todo._projects = ["test-project"]
+    assert not todo.changes
+
+    # clear project
+    todo.project = None
+    assert not todo.project
+    assert not todo.area
+    assert not todo.destination
+    assert todo.changes == {
+        "_projects",
+        "_modification_date",
+    }
+
+
+def test_assign_area_uuid():
     todo = TodoItem("test task")
     todo.area = "test-area"
     assert todo._areas == ["test-area"]
@@ -143,6 +187,22 @@ def test_assign_area():
     assert todo.destination == Destination.ANYTIME
     assert todo.changes == {
         "_destination",
+        "_areas",
+        "_modification_date",
+    }
+
+
+def test_clear_area():
+    todo = TodoItem("test task")
+    todo._areas = ["test-area"]
+    assert not todo.changes
+
+    # clear area
+    todo.area = None
+    assert not todo.area
+    assert not todo.project
+    assert not todo.destination
+    assert todo.changes == {
         "_areas",
         "_modification_date",
     }

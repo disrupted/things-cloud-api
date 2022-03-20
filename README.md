@@ -32,7 +32,7 @@ things.create(project)
 
 # create a todo inside project
 todo = TodoItem("Try out Things Cloud")
-todo.project = project.uuid
+todo.project = project
 things.create(todo)
 
 # schedule for today

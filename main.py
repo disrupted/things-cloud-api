@@ -23,7 +23,7 @@ def main():
     sleep(10)
     # create a todo inside project
     todo = TodoItem("Try out Things Cloud")
-    todo.project = project.uuid
+    todo.project = project
     things.create(todo)
 
     sleep(10)
