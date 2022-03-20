@@ -208,6 +208,67 @@ def test_clear_area():
     }
 
 
+def test_todo():
+    todo = TodoItem("test task")
+    # should fail if status is already todo
+    with pytest.raises(ValueError):
+        todo.todo()
+    assert not todo.changes
+
+    todo._status = Status.COMPLETE
+    todo._completion_date = dt.datetime(2022, 1, 1)
+    todo.todo()
+    assert todo._status == Status.TODO
+    assert todo._completion_date is None
+    assert todo.changes == {
+        "_status",
+        "_completion_date",
+        "_modification_date",
+    }
+
+
+def test_complete():
+    todo = TodoItem("test task")
+    todo._status = Status.COMPLETE
+    todo._completion_date = dt.datetime(2022, 1, 1)
+    # should fail if status is already complete
+    with pytest.raises(ValueError):
+        todo.complete()
+    assert not todo.changes
+
+    todo._status = Status.TODO
+    todo._completion_date = None
+    todo.complete()
+    assert todo._status == Status.COMPLETE
+    assert todo._completion_date == Util.now()
+    assert todo.changes == {
+        "_status",
+        "_completion_date",
+        "_modification_date",
+    }
+
+
+def test_cancel():
+    todo = TodoItem("test task")
+    todo._status = Status.CANCELLED
+    todo._completion_date = dt.datetime(2022, 1, 1)
+    # should fail if status is already cancelled
+    with pytest.raises(ValueError):
+        todo.cancel()
+    assert not todo.changes
+
+    todo._status = Status.TODO
+    todo._completion_date = None
+    todo.cancel()
+    assert todo._status == Status.CANCELLED
+    assert todo._completion_date == Util.now()
+    assert todo.changes == {
+        "_status",
+        "_completion_date",
+        "_modification_date",
+    }
+
+
 def test_today():
     todo = TodoItem("test task")
     todo.today()
