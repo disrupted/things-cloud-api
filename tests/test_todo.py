@@ -192,6 +192,22 @@ def test_assign_area_uuid():
     }
 
 
+def test_clear_area():
+    todo = TodoItem("test task")
+    todo._areas = ["test-area"]
+    assert not todo.changes
+
+    # clear area
+    todo.area = None
+    assert not todo.area
+    assert not todo.project
+    assert not todo.destination
+    assert todo.changes == {
+        "_areas",
+        "_modification_date",
+    }
+
+
 def test_deserialize():
     api_object = {
         "ix": 1234,
