@@ -1,4 +1,4 @@
-import datetime as dt
+from datetime import datetime, timezone
 
 import pytest
 from attrs import asdict
@@ -14,7 +14,7 @@ from things_cloud.models.todo import (
 )
 from things_cloud.utils import Util
 
-FAKE_TIME = dt.datetime(2021, 1, 1)
+FAKE_TIME = datetime(2021, 1, 1)
 
 
 @pytest.fixture(autouse=True)
@@ -216,7 +216,7 @@ def test_todo():
     assert not todo.changes
 
     todo._status = Status.COMPLETE
-    todo._completion_date = dt.datetime(2022, 1, 1)
+    todo._completion_date = datetime(2022, 1, 1)
     todo.todo()
     assert todo._status == Status.TODO
     assert todo._completion_date is None
@@ -230,7 +230,7 @@ def test_todo():
 def test_complete():
     todo = TodoItem("test task")
     todo._status = Status.COMPLETE
-    todo._completion_date = dt.datetime(2022, 1, 1)
+    todo._completion_date = datetime(2022, 1, 1)
     # should fail if status is already complete
     with pytest.raises(ValueError):
         todo.complete()
@@ -251,7 +251,7 @@ def test_complete():
 def test_cancel():
     todo = TodoItem("test task")
     todo._status = Status.CANCELLED
-    todo._completion_date = dt.datetime(2022, 1, 1)
+    todo._completion_date = datetime(2022, 1, 1)
     # should fail if status is already cancelled
     with pytest.raises(ValueError):
         todo.cancel()
@@ -336,7 +336,7 @@ def test_deserialize():
         "agr": [],
     }
     todo = deserialize(api_object)
-    time = dt.datetime(2022, 1, 3, 19, 29, 27)
+    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
     assert todo._index == 1234
     assert todo._title == "test task"
     assert todo._status == Status.TODO

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from enum import Enum
 from typing import Any, Deque
 
@@ -320,7 +320,7 @@ converter.register_structure_hook(TodoItem, todo_st_hook)  # type: ignore
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 converter.register_structure_hook(
-    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp)
+    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp, timezone.utc)
 )
 
 ALIASES_UNSTRUCT = {
