@@ -10,8 +10,7 @@ class Util:
 
     @staticmethod
     def today() -> datetime:
-        tz_local = datetime.now(timezone.utc).astimezone().tzinfo
-        return datetime.combine(date.today(), datetime.min.time(), tz_local)
+        return datetime.combine(date.today(), datetime.min.time())
 
     @staticmethod
     def offset_date(days: int, start: datetime | None = None) -> datetime:
