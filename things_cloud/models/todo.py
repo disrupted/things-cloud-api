@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from enum import Enum
 from typing import Any, Deque
 
@@ -164,16 +164,22 @@ class TodoItem:
             self.destination = Destination.ANYTIME
 
     def todo(self) -> None:
+        if self._status == Status.TODO:
+            raise ValueError("item already has todo status")
         self._status = Status.TODO
         self._changes.append("_status")
         self.completion_date = None
 
     def complete(self) -> None:
+        if self._status == Status.COMPLETE:
+            raise ValueError("item already has complete status")
         self._status = Status.COMPLETE
         self._changes.append("_status")
         self.completion_date = Util.now()
 
     def cancel(self) -> None:
+        if self._status == Status.CANCELLED:
+            raise ValueError("item already has cancelled status")
         self._status = Status.CANCELLED
         self._changes.append("_status")
         self.completion_date = Util.now()
@@ -314,7 +320,7 @@ converter.register_structure_hook(TodoItem, todo_st_hook)  # type: ignore
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 converter.register_structure_hook(
-    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp)
+    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp, timezone.utc)
 )
 
 ALIASES_UNSTRUCT = {

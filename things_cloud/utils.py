@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
-from shortuuid import ShortUUID  # type: ignore
+from shortuuid import ShortUUID
 
 
 class Util:
@@ -10,8 +10,7 @@ class Util:
 
     @staticmethod
     def today() -> datetime:
-        tz_local = datetime.now(timezone.utc).astimezone().tzinfo
-        return datetime.combine(date.today(), datetime.min.time(), tz_local)
+        return datetime.combine(date.today(), datetime.min.time())
 
     @staticmethod
     def offset_date(days: int, start: datetime | None = None) -> datetime:
@@ -21,6 +20,7 @@ class Util:
 
     @staticmethod
     def as_timestamp(dt: datetime) -> int:
+        """Convert datetime object to a UTC timestamp."""
         return int(dt.replace(tzinfo=timezone.utc).timestamp())
 
     @staticmethod

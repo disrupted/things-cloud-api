@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -76,7 +76,7 @@ def test_process_new():
     things._process_updates(data)
     todos = list(things._items.values())
     assert len(todos) == 1
-    time = datetime(2022, 1, 3, 19, 29, 27)
+    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
     todo = todos[0]
     assert todo._uuid == "aBCDiHyah4Uf0MQqp11jsX"
     assert todo._index == 1234
@@ -144,7 +144,9 @@ def test_process_updated():
     todo = todos[UUID]
     assert todo._uuid == UUID
     assert todo._title == "test updated"
-    assert todo._modification_date == datetime(2022, 1, 3, 19, 29, 27, 123456)
+    assert todo._modification_date == datetime(
+        2022, 1, 3, 18, 29, 27, 123456, tzinfo=timezone.utc
+    )
     assert not todo._changes
 
 
