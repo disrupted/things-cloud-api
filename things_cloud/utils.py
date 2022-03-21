@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
-from shortuuid import ShortUUID  # type: ignore
+from shortuuid import ShortUUID
 
 
 class Util:
