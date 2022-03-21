@@ -20,6 +20,7 @@ class Util:
 
     @staticmethod
     def as_timestamp(dt: datetime) -> int:
+        """Convert datetime object to a UTC timestamp."""
         return int(dt.replace(tzinfo=timezone.utc).timestamp())
 
     @staticmethod
