@@ -6,7 +6,7 @@ authors = ["disrupted <hi@salomonpopp.me>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-orjson = "^3.7.0"
+orjson = "^3.7.1"
 shortuuid = "^1.0.9"
 httpx = "^0.23.0"
 structlog = "^21.5.0"
