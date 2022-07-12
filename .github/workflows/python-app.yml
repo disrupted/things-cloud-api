@@ -18,34 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Configure poetry virtualenv
+        run: poetry config virtualenvs.in-project true
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          cache: poetry
 
-      - name: Get Python version
-        id: python-version
-        run: echo ::set-output name=version::"$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")"
-
-      - name: Run poetry image
-        uses: abatilo/actions-poetry@v2.1.5
-        with:
-          poetry-version: "1.1.12"
-
-      - name: Set poetry virtualenv
-        run: poetry config virtualenvs.in-project true
-
-      - name: Set up cache
-        uses: actions/cache@v3
-        id: cache
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.python-version.outputs.version }}-${{ hashFiles('poetry.lock') }}
-
-      - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
-        shell: bash
-        run: timeout 10s python -m poetry run pip --version || rm -rf .venv
+      - run: poetry env use ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: poetry install --no-interaction
@@ -62,7 +47,7 @@ jobs:
         run: |
           poetry run pre-commit run --hook-stage manual mypy --all-files
 
-      - name: Update Python syntax
+      - name: Check syntax update
         run: |
           poetry run pre-commit run --hook-stage manual pyupgrade --all-files
 
