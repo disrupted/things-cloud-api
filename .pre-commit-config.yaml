@@ -27,7 +27,7 @@ repos:
         args: ["--pretty"]
         additional_dependencies: [types-python-dateutil, types-freezegun]
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.0
+    rev: 5.0.1
     hooks:
       - id: flake8
         args: ["--config", "setup.cfg"]
