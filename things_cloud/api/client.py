@@ -14,7 +14,7 @@ log = get_logger()
 
 
 class ThingsClient:
-    def __init__(self, acc: str, initial_offset: int | None = None):
+    def __init__(self, acc: str, initial_offset: int | None = None) -> None:
         self._items: dict[str, TodoItem] = {}  # TODO: create DB
         self._base_url: str = f"{API_BASE}/history/{acc}"
         self._client = httpx.Client(
@@ -34,16 +34,16 @@ class ThingsClient:
         self._client.close()
 
     @staticmethod
-    def log_request(request: Request):
+    def log_request(request: Request) -> None:
         log.debug(f"Request: {request.method} {request.url} - Waiting for response")
 
     @staticmethod
-    def raise_on_4xx_5xx(response: Response):
+    def raise_on_4xx_5xx(response: Response) -> None:
         """Raises a HTTPStatusError on 4xx and 5xx responses."""
         response.raise_for_status()
 
     @staticmethod
-    def log_response(response: Response):
+    def log_response(response: Response) -> None:
         request = response.request
         log.debug(
             f"Response: {request.method} {request.url}", status=response.status_code
@@ -55,7 +55,7 @@ class ThingsClient:
     def offset(self) -> int:
         return self._offset
 
-    def update(self):
+    def update(self) -> None:
         self._offset = self.__fetch(self._offset)
 
     def create(self, item: TodoItem) -> None:
