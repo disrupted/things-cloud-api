@@ -108,7 +108,7 @@ def test_process_new():
     assert todo._today_index == 0
     assert todo._reminder is None
     assert todo._instance_creation_start_date is None
-    assert todo._rp is None
+    assert todo._repeater is None
     assert todo._after_completion_reference_date is None
     assert todo._recurrence_rule is None
     assert todo._note == Note()

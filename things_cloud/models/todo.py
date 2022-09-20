@@ -74,7 +74,7 @@ class TodoItem:
     _today_index: int = field(default=0, kw_only=True)
     _reminder: time | None = field(default=None, kw_only=True)
     _instance_creation_start_date: Any = field(default=None, kw_only=True)
-    _rp: Any = field(default=None, kw_only=True)  # TODO: repeater?
+    _repeater: Any = field(default=None, kw_only=True)  # TODO: date type yet to be seen
     _after_completion_reference_date: Any = field(default=None, kw_only=True)
     _recurrence_rule: Any = field(default=None, kw_only=True)
     _note: Note = field(factory=Note, kw_only=True)
@@ -314,7 +314,7 @@ todo_st_hook = make_dict_structure_fn(
     _today_index=override(rename="ti"),
     _reminder=override(rename="ato"),
     _instance_creation_start_date=override(rename="icsd"),
-    _rp=override(rename="rp"),
+    _repeater=override(rename="rp"),
     _after_completion_reference_date=override(rename="acrd"),
     _recurrence_rule=override(rename="rr"),
     _note=override(rename="nt"),
@@ -359,7 +359,7 @@ ALIASES_UNSTRUCT = {
     "_today_index": "ti",
     "_reminder": "ato",
     "_instance_creation_start_date": "icsd",
-    "_rp": "rp",
+    "_repeater": "rp",
     "_after_completion_reference_date": "acrd",
     "_recurrence_rule": "rr",
     "_note": "nt",
