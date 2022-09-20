@@ -60,12 +60,16 @@ class TodoItem:
     _projects: list[str] = field(factory=list, kw_only=True)
     _areas: list[str] = field(factory=list, kw_only=True)
     _is_evening: bool = field(default=False, converter=int, kw_only=True)
-    _tags: list[Any] = field(factory=list, kw_only=True)
+    _tags: list[Any] = field(factory=list, kw_only=True)  # TODO: set data type
     _type: Type = field(default=Type.TASK, kw_only=True)
     _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
     _repeating_template: list[str] = field(factory=list, kw_only=True)
-    _repeater_migration_date: Any = field(default=None, kw_only=True)
-    _delegate: list[Any] = field(factory=list, kw_only=True)
+    _repeater_migration_date: Any = field(
+        default=None, kw_only=True
+    )  # TODO: date type yet to be seen
+    _delegate: list[Any] = field(
+        factory=list, kw_only=True
+    )  # TODO: date type yet to be seen
     _due_date_offset: int = field(default=0, kw_only=True)
     _last_alarm_interaction_date: datetime | None = field(default=None, kw_only=True)
     _action_group: list[str] = field(factory=list, kw_only=True)
