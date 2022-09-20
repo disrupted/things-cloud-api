@@ -109,6 +109,7 @@ def test_todo_schema_create():
 
 def test_as_project():
     project = TodoItem().as_project()
+    assert project._type == Type.PROJECT
     assert project._is_project is True
     assert project.destination == Destination.ANYTIME
     assert project.changes == {

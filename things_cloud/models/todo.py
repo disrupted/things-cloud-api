@@ -205,10 +205,10 @@ class TodoItem:
         self.modify()
 
     def as_project(self) -> TodoItem:
+        self._type = Type.PROJECT
+        self._changes.append("_type")
         self._is_project = True
         self._changes.append("_is_project")
-        self._type = Type.TASK
-        self._changes.append("_type")
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
         self.modify()
