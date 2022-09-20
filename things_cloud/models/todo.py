@@ -15,6 +15,12 @@ from things_cloud.utils import Util
 SERDE = TodoSerde()
 
 
+class Type(int, Enum):
+    TASK = 0
+    PROJECT = 1
+    HEADING = 2
+
+
 class Destination(int, Enum):
     # destination: {0: inbox, 1: anytime/today/evening, 2: someday}
     INBOX = 0
@@ -55,7 +61,7 @@ class TodoItem:
     _areas: list[str] = field(factory=list, kw_only=True)
     _is_evening: bool = field(default=False, converter=int, kw_only=True)
     _tags: list[Any] = field(factory=list, kw_only=True)
-    _tp: int = field(default=0, kw_only=True)  # 0: todo, 1: project?
+    _type: Type = field(default=Type.TASK, kw_only=True)
     _dds: Any = field(default=None, kw_only=True)
     _rt: list[Any] = field(factory=list, kw_only=True)
     _rmd: Any = field(default=None, kw_only=True)
@@ -197,8 +203,8 @@ class TodoItem:
     def as_project(self) -> TodoItem:
         self._is_project = True
         self._changes.append("_is_project")
-        self._tp = 1
-        self._changes.append("_tp")
+        self._type = Type.TASK
+        self._changes.append("_type")
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
         self.modify()
@@ -295,7 +301,7 @@ todo_st_hook = make_dict_structure_fn(
     _areas=override(rename="ar"),
     _is_evening=override(rename="sb"),
     _tags=override(rename="tg"),
-    _tp=override(rename="tp"),  # 0: todo, 1: project?
+    _type=override(rename="tp"),
     _dds=override(rename="dds"),
     _rt=override(rename="rt"),
     _rmd=override(rename="rmd"),
@@ -316,7 +322,7 @@ todo_st_hook = make_dict_structure_fn(
 
 
 converter.register_unstructure_hook(TodoItem, todo_unst_hook)
-converter.register_structure_hook(TodoItem, todo_st_hook)  # type: ignore
+converter.register_structure_hook(TodoItem, todo_st_hook)
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 converter.register_structure_hook(
@@ -340,7 +346,7 @@ ALIASES_UNSTRUCT = {
     "_areas": "ar",
     "_is_evening": "sb",
     "_tags": "tg",
-    "_tp": "tp",  # 0: todo, 1: project?
+    "_type": "tp",
     "_dds": "dds",
     "_rt": "rt",
     "_rmd": "rmd",
