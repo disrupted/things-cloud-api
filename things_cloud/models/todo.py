@@ -69,7 +69,7 @@ class TodoItem:
     _due_date_offset: int = field(default=0, kw_only=True)
     _last_alarm_interaction_date: Any = field(default=None, kw_only=True)
     _action_group: list[Any] = field(factory=list, kw_only=True)
-    _lt: bool = field(default=False, kw_only=True)  # TODO: leavesTombstone?
+    _leaves_tombstone: bool = field(default=False, kw_only=True)
     _instance_creation_count: int = field(default=0, kw_only=True)
     _today_index: int = field(default=0, kw_only=True)
     _reminder: time | None = field(default=None, kw_only=True)
@@ -309,7 +309,7 @@ todo_st_hook = make_dict_structure_fn(
     _due_date_offset=override(rename="do"),
     _last_alarm_interaction_date=override(rename="lai"),
     _action_group=override(rename="agr"),
-    _lt=override(rename="lt"),
+    _leaves_tombstone=override(rename="lt"),
     _instance_creation_count=override(rename="icc"),
     _today_index=override(rename="ti"),
     _reminder=override(rename="ato"),
@@ -354,7 +354,7 @@ ALIASES_UNSTRUCT = {
     "_due_date_offset": "do",
     "_last_alarm_interaction_date": "lai",
     "_action_group": "agr",
-    "_lt": "lt",
+    "_leaves_tombstone": "lt",
     "_instance_creation_count": "icc",
     "_today_index": "ti",
     "_reminder": "ato",

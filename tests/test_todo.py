@@ -363,7 +363,7 @@ def test_deserialize():
     assert todo._due_date_offset == 0
     assert todo._last_alarm_interaction_date is None
     assert todo._action_group == []
-    assert todo._lt is False
+    assert todo._leaves_tombstone is False
     assert todo._instance_creation_count == 0
     assert todo._today_index == 0
     assert todo._reminder is None
