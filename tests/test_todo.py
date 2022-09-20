@@ -357,7 +357,7 @@ def test_deserialize():
     assert todo._tags == []
     assert todo._type == Type.TASK
     assert todo._due_date_suppression_date is None
-    assert todo._rt == []
+    assert todo._repeating_template == []
     assert todo._repeater_migration_date is None
     assert todo._delegate == []
     assert todo._due_date_offset == 0
