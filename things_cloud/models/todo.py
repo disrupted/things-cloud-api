@@ -62,9 +62,7 @@ class TodoItem:
     _is_evening: bool = field(default=False, converter=int, kw_only=True)
     _tags: list[Any] = field(factory=list, kw_only=True)
     _type: Type = field(default=Type.TASK, kw_only=True)
-    _dds: Any = field(
-        default=None, kw_only=True
-    )  # TODO: dueDateOffset? / dueDateSuppressionDate?
+    _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
     _rt: list[Any] = field(factory=list, kw_only=True)  # TODO: repeatingTemplate?
     _repeater_migration_date: Any = field(default=None, kw_only=True)
     _dl: list[Any] = field(factory=list, kw_only=True)  # TODO: delegate?
@@ -304,7 +302,7 @@ todo_st_hook = make_dict_structure_fn(
     _is_evening=override(rename="sb"),
     _tags=override(rename="tg"),
     _type=override(rename="tp"),
-    _dds=override(rename="dds"),
+    _due_date_suppression_date=override(rename="dds"),
     _rt=override(rename="rt"),
     _repeater_migration_date=override(rename="rmd"),
     _dl=override(rename="dl"),
@@ -349,7 +347,7 @@ ALIASES_UNSTRUCT = {
     "_is_evening": "sb",
     "_tags": "tg",
     "_type": "tp",
-    "_dds": "dds",
+    "_due_date_suppression_date": "dds",
     "_rt": "rt",
     "_repeater_migration_date": "rmd",
     "_dl": "dl",

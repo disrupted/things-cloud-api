@@ -96,7 +96,7 @@ def test_process_new():
     assert todo._is_evening == 0
     assert todo._tags == []
     assert todo._type == Type.TASK
-    assert todo._dds is None
+    assert todo._due_date_suppression_date is None
     assert todo._rt == []
     assert todo._repeater_migration_date is None
     assert todo._dl == []
