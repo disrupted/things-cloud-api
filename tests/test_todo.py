@@ -49,7 +49,7 @@ def test_todo_schema_create():
         "dl": [],
         "do": 0,
         "icc": 0,
-        "is_project": False,
+        "instance_creation_paused": False,
         "icsd": None,
         "lai": None,
         "lt": False,
@@ -110,11 +110,11 @@ def test_todo_schema_create():
 def test_as_project():
     project = TodoItem().as_project()
     assert project._type == Type.PROJECT
-    assert project._is_project is True
+    assert project._instance_creation_paused is True
     assert project.destination == Destination.ANYTIME
     assert project.changes == {
         "_destination",
-        "_is_project",
+        "_instance_creation_paused",
         "_type",
         "_modification_date",
     }
@@ -350,7 +350,7 @@ def test_deserialize():
     assert todo._completion_date is None
     assert todo._due_date is None
     assert todo._trashed is False
-    assert todo._is_project is False
+    assert todo._instance_creation_paused is False
     assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
     assert todo._areas == []
     assert todo._is_evening == 0

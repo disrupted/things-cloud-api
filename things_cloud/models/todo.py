@@ -56,9 +56,7 @@ class TodoItem:
     _completion_date: datetime | None = field(default=None, kw_only=True)
     _due_date: datetime | None = field(default=None, kw_only=True)
     _trashed: bool = field(default=False, kw_only=True)
-    _is_project: bool = field(
-        default=False, kw_only=True
-    )  # TODO: instanceCreationPaused?
+    _instance_creation_paused: bool = field(default=False, kw_only=True)
     _projects: list[str] = field(factory=list, kw_only=True)
     _areas: list[str] = field(factory=list, kw_only=True)
     _is_evening: bool = field(default=False, converter=int, kw_only=True)
@@ -134,7 +132,7 @@ class TodoItem:
     @project.setter
     def project(self, project: TodoItem | str | None) -> None:
         if isinstance(project, TodoItem):
-            if not project._is_project:
+            if not project._type == Type.PROJECT:
                 raise ValueError("argument must be a project")
             self._projects = [project.uuid]
         elif project:
@@ -207,8 +205,8 @@ class TodoItem:
     def as_project(self) -> TodoItem:
         self._type = Type.PROJECT
         self._changes.append("_type")
-        self._is_project = True
-        self._changes.append("_is_project")
+        self._instance_creation_paused = True
+        self._changes.append("_instance_creation_paused")
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
         self.modify()
@@ -300,7 +298,7 @@ todo_st_hook = make_dict_structure_fn(
     _completion_date=override(rename="sp"),
     _due_date=override(rename="dd"),
     _in_trash=override(rename="tr"),
-    _is_project=override(rename="icp"),
+    _instance_creation_paused=override(rename="icp"),
     _projects=override(rename="pr"),
     _areas=override(rename="ar"),
     _is_evening=override(rename="sb"),
@@ -345,7 +343,7 @@ ALIASES_UNSTRUCT = {
     "_completion_date": "sp",
     "_due_date": "dd",
     "_trashed": "tr",
-    "_is_project": "icp",
+    "_instance_creation_paused": "icp",
     "_projects": "pr",
     "_areas": "ar",
     "_is_evening": "sb",

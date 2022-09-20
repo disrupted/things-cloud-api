@@ -90,7 +90,7 @@ def test_process_new():
     assert todo._completion_date is None
     assert todo._due_date is None
     assert todo._trashed is False
-    assert todo._is_project is False
+    assert todo._instance_creation_paused is False
     assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
     assert todo._areas == []
     assert todo._is_evening == 0
