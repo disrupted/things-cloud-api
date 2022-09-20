@@ -67,16 +67,20 @@ class TodoItem:
     _repeater_migration_date: Any = field(default=None, kw_only=True)
     _delegate: list[Any] = field(factory=list, kw_only=True)
     _due_date_offset: int = field(default=0, kw_only=True)
-    _last_alarm_interaction_date: Any = field(default=None, kw_only=True)
-    _action_group: list[Any] = field(factory=list, kw_only=True)
+    _last_alarm_interaction_date: datetime | None = field(default=None, kw_only=True)
+    _action_group: list[str] = field(factory=list, kw_only=True)
     _leaves_tombstone: bool = field(default=False, kw_only=True)
     _instance_creation_count: int = field(default=0, kw_only=True)
     _today_index: int = field(default=0, kw_only=True)
     _reminder: time | None = field(default=None, kw_only=True)
-    _instance_creation_start_date: Any = field(default=None, kw_only=True)
+    _instance_creation_start_date: datetime | None = field(default=None, kw_only=True)
     _repeater: Any = field(default=None, kw_only=True)  # TODO: date type yet to be seen
-    _after_completion_reference_date: Any = field(default=None, kw_only=True)
-    _recurrence_rule: Any = field(default=None, kw_only=True)
+    _after_completion_reference_date: datetime | None = field(
+        default=None, kw_only=True
+    )
+    _recurrence_rule: str | None = field(
+        default=None, kw_only=True
+    )  # TODO: weird XML values
     _note: Note = field(factory=Note, kw_only=True)
     _changes: Deque[str] = field(factory=Deque, init=False)
 
