@@ -65,7 +65,7 @@ class TodoItem:
     _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
     _rt: list[Any] = field(factory=list, kw_only=True)  # TODO: repeatingTemplate?
     _repeater_migration_date: Any = field(default=None, kw_only=True)
-    _dl: list[Any] = field(factory=list, kw_only=True)  # TODO: delegate?
+    _delegate: list[Any] = field(factory=list, kw_only=True)
     _due_date_offset: int = field(default=0, kw_only=True)
     _last_alarm_interaction_date: Any = field(default=None, kw_only=True)
     _action_group: list[Any] = field(factory=list, kw_only=True)
@@ -305,7 +305,7 @@ todo_st_hook = make_dict_structure_fn(
     _due_date_suppression_date=override(rename="dds"),
     _rt=override(rename="rt"),
     _repeater_migration_date=override(rename="rmd"),
-    _dl=override(rename="dl"),
+    _delegate=override(rename="dl"),
     _due_date_offset=override(rename="do"),
     _last_alarm_interaction_date=override(rename="lai"),
     _action_group=override(rename="agr"),
@@ -350,7 +350,7 @@ ALIASES_UNSTRUCT = {
     "_due_date_suppression_date": "dds",
     "_rt": "rt",
     "_repeater_migration_date": "rmd",
-    "_dl": "dl",
+    "_delegate": "dl",
     "_due_date_offset": "do",
     "_last_alarm_interaction_date": "lai",
     "_action_group": "agr",
