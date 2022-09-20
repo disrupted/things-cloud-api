@@ -15,6 +15,12 @@ from things_cloud.utils import Util
 SERDE = TodoSerde()
 
 
+class Type(int, Enum):
+    TASK = 0
+    PROJECT = 1
+    HEADING = 2
+
+
 class Destination(int, Enum):
     # destination: {0: inbox, 1: anytime/today/evening, 2: someday}
     INBOX = 0
@@ -46,31 +52,39 @@ class TodoItem:
     _creation_date: datetime | None = field(factory=Util.now, kw_only=True)
     _modification_date: datetime | None = field(factory=Util.now, kw_only=True)
     _scheduled_date: datetime | None = field(default=None, kw_only=True)
-    _tir: datetime | None = field(default=None, kw_only=True)  # same as scheduled_date?
+    _today_index_reference_date: datetime | None = field(default=None, kw_only=True)
     _completion_date: datetime | None = field(default=None, kw_only=True)
     _due_date: datetime | None = field(default=None, kw_only=True)
     _trashed: bool = field(default=False, kw_only=True)
-    _is_project: bool = field(default=False, kw_only=True)
+    _instance_creation_paused: bool = field(default=False, kw_only=True)
     _projects: list[str] = field(factory=list, kw_only=True)
     _areas: list[str] = field(factory=list, kw_only=True)
     _is_evening: bool = field(default=False, converter=int, kw_only=True)
-    _tags: list[Any] = field(factory=list, kw_only=True)
-    _tp: int = field(default=0, kw_only=True)  # 0: todo, 1: project?
-    _dds: Any = field(default=None, kw_only=True)
-    _rt: list[Any] = field(factory=list, kw_only=True)
-    _rmd: Any = field(default=None, kw_only=True)
-    _dl: list[Any] = field(factory=list, kw_only=True)
-    _do: int = field(default=0, kw_only=True)
-    _lai: Any = field(default=None, kw_only=True)
-    _agr: list[Any] = field(factory=list, kw_only=True)
-    _lt: bool = field(default=False, kw_only=True)
-    _icc: int = field(default=0, kw_only=True)
-    _ti: int = field(default=0, kw_only=True)  # position/order of items
+    _tags: list[Any] = field(factory=list, kw_only=True)  # TODO: set data type
+    _type: Type = field(default=Type.TASK, kw_only=True)
+    _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
+    _repeating_template: list[str] = field(factory=list, kw_only=True)
+    _repeater_migration_date: Any = field(
+        default=None, kw_only=True
+    )  # TODO: date type yet to be seen
+    _delegate: list[Any] = field(
+        factory=list, kw_only=True
+    )  # TODO: date type yet to be seen
+    _due_date_offset: int = field(default=0, kw_only=True)
+    _last_alarm_interaction_date: datetime | None = field(default=None, kw_only=True)
+    _action_group: list[str] = field(factory=list, kw_only=True)
+    _leaves_tombstone: bool = field(default=False, kw_only=True)
+    _instance_creation_count: int = field(default=0, kw_only=True)
+    _today_index: int = field(default=0, kw_only=True)
     _reminder: time | None = field(default=None, kw_only=True)
-    _icsd: Any = field(default=None, kw_only=True)
-    _rp: Any = field(default=None, kw_only=True)
-    _acrd: Any = field(default=None, kw_only=True)
-    _rr: Any = field(default=None, kw_only=True)
+    _instance_creation_start_date: datetime | None = field(default=None, kw_only=True)
+    _repeater: Any = field(default=None, kw_only=True)  # TODO: date type yet to be seen
+    _after_completion_reference_date: datetime | None = field(
+        default=None, kw_only=True
+    )
+    _recurrence_rule: str | None = field(
+        default=None, kw_only=True
+    )  # TODO: weird XML values
     _note: Note = field(factory=Note, kw_only=True)
     _changes: Deque[str] = field(factory=Deque, init=False)
 
@@ -124,7 +138,7 @@ class TodoItem:
     @project.setter
     def project(self, project: TodoItem | str | None) -> None:
         if isinstance(project, TodoItem):
-            if not project._is_project:
+            if not project._type == Type.PROJECT:
                 raise ValueError("argument must be a project")
             self._projects = [project.uuid]
         elif project:
@@ -195,10 +209,10 @@ class TodoItem:
         self.modify()
 
     def as_project(self) -> TodoItem:
-        self._is_project = True
-        self._changes.append("_is_project")
-        self._tp = 1
-        self._changes.append("_tp")
+        self._type = Type.PROJECT
+        self._changes.append("_type")
+        self._instance_creation_paused = True
+        self._changes.append("_instance_creation_paused")
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
         self.modify()
@@ -222,8 +236,8 @@ class TodoItem:
     def scheduled_date(self, scheduled_date: datetime | None) -> None:
         self._changes.append("_scheduled_date")
         self._scheduled_date = scheduled_date
-        self._changes.append("_tir")
-        self._tir = scheduled_date
+        self._changes.append("_today_index_reference_date")
+        self._today_index_reference_date = scheduled_date
         self.modify()
 
     @property
@@ -286,37 +300,37 @@ todo_st_hook = make_dict_structure_fn(
     _creation_date=override(rename="cd"),
     _modification_date=override(rename="md"),
     _scheduled_date=override(rename="sr"),
-    _tir=override(rename="tir"),  # same as scheduled_date?
+    _today_index_reference_date=override(rename="tir"),
     _completion_date=override(rename="sp"),
     _due_date=override(rename="dd"),
     _in_trash=override(rename="tr"),
-    _is_project=override(rename="icp"),
+    _instance_creation_paused=override(rename="icp"),
     _projects=override(rename="pr"),
     _areas=override(rename="ar"),
     _is_evening=override(rename="sb"),
     _tags=override(rename="tg"),
-    _tp=override(rename="tp"),  # 0: todo, 1: project?
-    _dds=override(rename="dds"),
-    _rt=override(rename="rt"),
-    _rmd=override(rename="rmd"),
-    _dl=override(rename="dl"),
-    _do=override(rename="do"),
-    _lai=override(rename="lai"),
-    _agr=override(rename="agr"),
-    _lt=override(rename="lt"),
-    _icc=override(rename="icc"),
-    _ti=override(rename="ti"),  # position/order of items
+    _type=override(rename="tp"),
+    _due_date_suppression_date=override(rename="dds"),
+    _repeating_template=override(rename="rt"),
+    _repeater_migration_date=override(rename="rmd"),
+    _delegate=override(rename="dl"),
+    _due_date_offset=override(rename="do"),
+    _last_alarm_interaction_date=override(rename="lai"),
+    _action_group=override(rename="agr"),
+    _leaves_tombstone=override(rename="lt"),
+    _instance_creation_count=override(rename="icc"),
+    _today_index=override(rename="ti"),
     _reminder=override(rename="ato"),
-    _icsd=override(rename="icsd"),
-    _rp=override(rename="rp"),
-    _acrd=override(rename="acrd"),
-    _rr=override(rename="rr"),
+    _instance_creation_start_date=override(rename="icsd"),
+    _repeater=override(rename="rp"),
+    _after_completion_reference_date=override(rename="acrd"),
+    _recurrence_rule=override(rename="rr"),
     _note=override(rename="nt"),
 )
 
 
 converter.register_unstructure_hook(TodoItem, todo_unst_hook)
-converter.register_structure_hook(TodoItem, todo_st_hook)  # type: ignore
+converter.register_structure_hook(TodoItem, todo_st_hook)
 
 converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
 converter.register_structure_hook(
@@ -331,31 +345,31 @@ ALIASES_UNSTRUCT = {
     "_creation_date": "cd",
     "_modification_date": "md",
     "_scheduled_date": "sr",
-    "_tir": "tir",  # same as scheduled_date?
+    "_today_index_reference_date": "tir",
     "_completion_date": "sp",
     "_due_date": "dd",
     "_trashed": "tr",
-    "_is_project": "icp",
+    "_instance_creation_paused": "icp",
     "_projects": "pr",
     "_areas": "ar",
     "_is_evening": "sb",
     "_tags": "tg",
-    "_tp": "tp",  # 0: todo, 1: project?
-    "_dds": "dds",
-    "_rt": "rt",
-    "_rmd": "rmd",
-    "_dl": "dl",
-    "_do": "do",
-    "_lai": "lai",
-    "_agr": "agr",
-    "_lt": "lt",
-    "_icc": "icc",
-    "_ti": "ti",  # position/order of items
+    "_type": "tp",
+    "_due_date_suppression_date": "dds",
+    "_repeating_template": "rt",
+    "_repeater_migration_date": "rmd",
+    "_delegate": "dl",
+    "_due_date_offset": "do",
+    "_last_alarm_interaction_date": "lai",
+    "_action_group": "agr",
+    "_leaves_tombstone": "lt",
+    "_instance_creation_count": "icc",
+    "_today_index": "ti",
     "_reminder": "ato",
-    "_icsd": "icsd",
-    "_rp": "rp",
-    "_acrd": "acrd",
-    "_rr": "rr",
+    "_instance_creation_start_date": "icsd",
+    "_repeater": "rp",
+    "_after_completion_reference_date": "acrd",
+    "_recurrence_rule": "rr",
     "_note": "nt",
 }
 
