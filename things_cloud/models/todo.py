@@ -138,7 +138,7 @@ class TodoItem:
     @project.setter
     def project(self, project: TodoItem | str | None) -> None:
         if isinstance(project, TodoItem):
-            if not project._type == Type.PROJECT:
+            if project._type != Type.PROJECT:
                 raise ValueError("argument must be a project")
             self._projects = [project.uuid]
         elif project:
