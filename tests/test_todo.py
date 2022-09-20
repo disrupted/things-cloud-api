@@ -360,7 +360,7 @@ def test_deserialize():
     assert todo._rt == []
     assert todo._repeater_migration_date is None
     assert todo._dl == []
-    assert todo._do == 0
+    assert todo._due_date_offset == 0
     assert todo._last_alarm_interaction_date is None
     assert todo._action_group == []
     assert todo._lt is False

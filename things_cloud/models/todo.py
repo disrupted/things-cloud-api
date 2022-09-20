@@ -66,7 +66,7 @@ class TodoItem:
     _rt: list[Any] = field(factory=list, kw_only=True)  # TODO: repeatingTemplate?
     _repeater_migration_date: Any = field(default=None, kw_only=True)
     _dl: list[Any] = field(factory=list, kw_only=True)  # TODO: delegate?
-    _do: int = field(default=0, kw_only=True)  # TODO: ...offset?
+    _due_date_offset: int = field(default=0, kw_only=True)
     _last_alarm_interaction_date: Any = field(default=None, kw_only=True)
     _action_group: list[Any] = field(factory=list, kw_only=True)
     _lt: bool = field(default=False, kw_only=True)  # TODO: leavesTombstone?
@@ -306,7 +306,7 @@ todo_st_hook = make_dict_structure_fn(
     _rt=override(rename="rt"),
     _repeater_migration_date=override(rename="rmd"),
     _dl=override(rename="dl"),
-    _do=override(rename="do"),
+    _due_date_offset=override(rename="do"),
     _last_alarm_interaction_date=override(rename="lai"),
     _action_group=override(rename="agr"),
     _lt=override(rename="lt"),
@@ -351,7 +351,7 @@ ALIASES_UNSTRUCT = {
     "_rt": "rt",
     "_repeater_migration_date": "rmd",
     "_dl": "dl",
-    "_do": "do",
+    "_due_date_offset": "do",
     "_last_alarm_interaction_date": "lai",
     "_action_group": "agr",
     "_lt": "lt",
