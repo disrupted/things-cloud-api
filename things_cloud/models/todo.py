@@ -52,31 +52,37 @@ class TodoItem:
     _creation_date: datetime | None = field(factory=Util.now, kw_only=True)
     _modification_date: datetime | None = field(factory=Util.now, kw_only=True)
     _scheduled_date: datetime | None = field(default=None, kw_only=True)
-    _tir: datetime | None = field(default=None, kw_only=True)  # same as scheduled_date?
+    _tir: datetime | None = field(
+        default=None, kw_only=True
+    )  # TODO: todayIndexReferenceDate
     _completion_date: datetime | None = field(default=None, kw_only=True)
     _due_date: datetime | None = field(default=None, kw_only=True)
     _trashed: bool = field(default=False, kw_only=True)
-    _is_project: bool = field(default=False, kw_only=True)
+    _is_project: bool = field(
+        default=False, kw_only=True
+    )  # TODO: instanceCreationPaused?
     _projects: list[str] = field(factory=list, kw_only=True)
     _areas: list[str] = field(factory=list, kw_only=True)
     _is_evening: bool = field(default=False, converter=int, kw_only=True)
     _tags: list[Any] = field(factory=list, kw_only=True)
     _type: Type = field(default=Type.TASK, kw_only=True)
-    _dds: Any = field(default=None, kw_only=True)
-    _rt: list[Any] = field(factory=list, kw_only=True)
-    _rmd: Any = field(default=None, kw_only=True)
-    _dl: list[Any] = field(factory=list, kw_only=True)
-    _do: int = field(default=0, kw_only=True)
-    _lai: Any = field(default=None, kw_only=True)
-    _agr: list[Any] = field(factory=list, kw_only=True)
-    _lt: bool = field(default=False, kw_only=True)
-    _icc: int = field(default=0, kw_only=True)
-    _ti: int = field(default=0, kw_only=True)  # position/order of items
+    _dds: Any = field(
+        default=None, kw_only=True
+    )  # TODO: dueDateOffset? / dueDateSuppressionDate?
+    _rt: list[Any] = field(factory=list, kw_only=True)  # TODO: repeatingTemplate?
+    _rmd: Any = field(default=None, kw_only=True)  # TODO: repeaterMigrationDate
+    _dl: list[Any] = field(factory=list, kw_only=True)  # TODO: delegate?
+    _do: int = field(default=0, kw_only=True)  # TODO: ...offset?
+    _lai: Any = field(default=None, kw_only=True)  # TODO: lastAlarmInteractionDate
+    _agr: list[Any] = field(factory=list, kw_only=True)  # TODO: actionGroup
+    _lt: bool = field(default=False, kw_only=True)  # TODO: leavesTombstone?
+    _icc: int = field(default=0, kw_only=True)  # TODO: instanceCreationCount
+    _ti: int = field(default=0, kw_only=True)  # TODO: todayIndex
     _reminder: time | None = field(default=None, kw_only=True)
-    _icsd: Any = field(default=None, kw_only=True)
-    _rp: Any = field(default=None, kw_only=True)
-    _acrd: Any = field(default=None, kw_only=True)
-    _rr: Any = field(default=None, kw_only=True)
+    _icsd: Any = field(default=None, kw_only=True)  # TODO: instanceCreationStartDate
+    _rp: Any = field(default=None, kw_only=True)  # TODO: repeater?
+    _acrd: Any = field(default=None, kw_only=True)  # TODO: afterCompletionReferenceDate
+    _rr: Any = field(default=None, kw_only=True)  # TODO: recurrenceRule
     _note: Note = field(factory=Note, kw_only=True)
     _changes: Deque[str] = field(factory=Deque, init=False)
 
