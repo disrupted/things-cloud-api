@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 
 from things_cloud.api.client import ThingsClient
-from things_cloud.models.todo import Destination, Note, Status, TodoItem
+from things_cloud.models.todo import Destination, Note, Status, TodoItem, Type
 
 ACCOUNT = ""  # TODO
 OFFSET = 123
@@ -86,7 +86,7 @@ def test_process_new():
     assert todo._creation_date == time
     assert todo._modification_date == time
     assert todo._scheduled_date is None
-    assert todo._tir is None
+    assert todo._today_index_reference_date is None
     assert todo._completion_date is None
     assert todo._due_date is None
     assert todo._trashed is False
@@ -95,22 +95,22 @@ def test_process_new():
     assert todo._areas == []
     assert todo._is_evening == 0
     assert todo._tags == []
-    assert todo._tp == 0
+    assert todo._type == Type.TASK
     assert todo._dds is None
     assert todo._rt == []
-    assert todo._rmd is None
+    assert todo._repeater_migration_date is None
     assert todo._dl == []
     assert todo._do == 0
-    assert todo._lai is None
-    assert todo._agr == []
+    assert todo._last_alarm_interaction_date is None
+    assert todo._action_group == []
     assert todo._lt is False
-    assert todo._icc == 0
-    assert todo._ti == 0
+    assert todo._instance_creation_count == 0
+    assert todo._today_index == 0
     assert todo._reminder is None
-    assert todo._icsd is None
+    assert todo._instance_creation_start_date is None
     assert todo._rp is None
-    assert todo._acrd is None
-    assert todo._rr is None
+    assert todo._after_completion_reference_date is None
+    assert todo._recurrence_rule is None
     assert todo._note == Note()
     assert not todo._changes
 

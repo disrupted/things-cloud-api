@@ -52,9 +52,7 @@ class TodoItem:
     _creation_date: datetime | None = field(factory=Util.now, kw_only=True)
     _modification_date: datetime | None = field(factory=Util.now, kw_only=True)
     _scheduled_date: datetime | None = field(default=None, kw_only=True)
-    _tir: datetime | None = field(
-        default=None, kw_only=True
-    )  # TODO: todayIndexReferenceDate
+    _today_index_reference_date: datetime | None = field(default=None, kw_only=True)
     _completion_date: datetime | None = field(default=None, kw_only=True)
     _due_date: datetime | None = field(default=None, kw_only=True)
     _trashed: bool = field(default=False, kw_only=True)
@@ -70,19 +68,19 @@ class TodoItem:
         default=None, kw_only=True
     )  # TODO: dueDateOffset? / dueDateSuppressionDate?
     _rt: list[Any] = field(factory=list, kw_only=True)  # TODO: repeatingTemplate?
-    _rmd: Any = field(default=None, kw_only=True)  # TODO: repeaterMigrationDate
+    _repeater_migration_date: Any = field(default=None, kw_only=True)
     _dl: list[Any] = field(factory=list, kw_only=True)  # TODO: delegate?
     _do: int = field(default=0, kw_only=True)  # TODO: ...offset?
-    _lai: Any = field(default=None, kw_only=True)  # TODO: lastAlarmInteractionDate
-    _agr: list[Any] = field(factory=list, kw_only=True)  # TODO: actionGroup
+    _last_alarm_interaction_date: Any = field(default=None, kw_only=True)
+    _action_group: list[Any] = field(factory=list, kw_only=True)
     _lt: bool = field(default=False, kw_only=True)  # TODO: leavesTombstone?
-    _icc: int = field(default=0, kw_only=True)  # TODO: instanceCreationCount
-    _ti: int = field(default=0, kw_only=True)  # TODO: todayIndex
+    _instance_creation_count: int = field(default=0, kw_only=True)
+    _today_index: int = field(default=0, kw_only=True)
     _reminder: time | None = field(default=None, kw_only=True)
-    _icsd: Any = field(default=None, kw_only=True)  # TODO: instanceCreationStartDate
+    _instance_creation_start_date: Any = field(default=None, kw_only=True)
     _rp: Any = field(default=None, kw_only=True)  # TODO: repeater?
-    _acrd: Any = field(default=None, kw_only=True)  # TODO: afterCompletionReferenceDate
-    _rr: Any = field(default=None, kw_only=True)  # TODO: recurrenceRule
+    _after_completion_reference_date: Any = field(default=None, kw_only=True)
+    _recurrence_rule: Any = field(default=None, kw_only=True)
     _note: Note = field(factory=Note, kw_only=True)
     _changes: Deque[str] = field(factory=Deque, init=False)
 
@@ -234,8 +232,8 @@ class TodoItem:
     def scheduled_date(self, scheduled_date: datetime | None) -> None:
         self._changes.append("_scheduled_date")
         self._scheduled_date = scheduled_date
-        self._changes.append("_tir")
-        self._tir = scheduled_date
+        self._changes.append("_today_index_reference_date")
+        self._today_index_reference_date = scheduled_date
         self.modify()
 
     @property
@@ -298,7 +296,7 @@ todo_st_hook = make_dict_structure_fn(
     _creation_date=override(rename="cd"),
     _modification_date=override(rename="md"),
     _scheduled_date=override(rename="sr"),
-    _tir=override(rename="tir"),  # same as scheduled_date?
+    _today_index_reference_date=override(rename="tir"),
     _completion_date=override(rename="sp"),
     _due_date=override(rename="dd"),
     _in_trash=override(rename="tr"),
@@ -310,19 +308,19 @@ todo_st_hook = make_dict_structure_fn(
     _type=override(rename="tp"),
     _dds=override(rename="dds"),
     _rt=override(rename="rt"),
-    _rmd=override(rename="rmd"),
+    _repeater_migration_date=override(rename="rmd"),
     _dl=override(rename="dl"),
     _do=override(rename="do"),
-    _lai=override(rename="lai"),
-    _agr=override(rename="agr"),
+    _last_alarm_interaction_date=override(rename="lai"),
+    _action_group=override(rename="agr"),
     _lt=override(rename="lt"),
-    _icc=override(rename="icc"),
-    _ti=override(rename="ti"),  # position/order of items
+    _instance_creation_count=override(rename="icc"),
+    _today_index=override(rename="ti"),
     _reminder=override(rename="ato"),
-    _icsd=override(rename="icsd"),
+    _instance_creation_start_date=override(rename="icsd"),
     _rp=override(rename="rp"),
-    _acrd=override(rename="acrd"),
-    _rr=override(rename="rr"),
+    _after_completion_reference_date=override(rename="acrd"),
+    _recurrence_rule=override(rename="rr"),
     _note=override(rename="nt"),
 )
 
@@ -343,7 +341,7 @@ ALIASES_UNSTRUCT = {
     "_creation_date": "cd",
     "_modification_date": "md",
     "_scheduled_date": "sr",
-    "_tir": "tir",  # same as scheduled_date?
+    "_today_index_reference_date": "tir",
     "_completion_date": "sp",
     "_due_date": "dd",
     "_trashed": "tr",
@@ -355,19 +353,19 @@ ALIASES_UNSTRUCT = {
     "_type": "tp",
     "_dds": "dds",
     "_rt": "rt",
-    "_rmd": "rmd",
+    "_repeater_migration_date": "rmd",
     "_dl": "dl",
     "_do": "do",
-    "_lai": "lai",
-    "_agr": "agr",
+    "_last_alarm_interaction_date": "lai",
+    "_action_group": "agr",
     "_lt": "lt",
-    "_icc": "icc",
-    "_ti": "ti",  # position/order of items
+    "_instance_creation_count": "icc",
+    "_today_index": "ti",
     "_reminder": "ato",
-    "_icsd": "icsd",
+    "_instance_creation_start_date": "icsd",
     "_rp": "rp",
-    "_acrd": "acrd",
-    "_rr": "rr",
+    "_after_completion_reference_date": "acrd",
+    "_recurrence_rule": "rr",
     "_note": "nt",
 }
 
