@@ -280,9 +280,7 @@ class TodoItem:
             setattr(self, key, val)
 
 
-# converter = cattrs.Converter()
-converter = cattrs.GenConverter(forbid_extra_keys=True)
-# TODO
+converter = cattrs.Converter(forbid_extra_keys=True)
 todo_unst_hook = make_dict_unstructure_fn(
     TodoItem,
     converter,
