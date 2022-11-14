@@ -500,7 +500,7 @@ jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
 
 [[package]]
 name = "shortuuid"
-version = "1.0.10"
+version = "1.0.11"
 description = "A generator library for concise, unambiguous and URL-safe UUIDs."
 category = "main"
 optional = false
@@ -580,7 +580,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "2dce4d63e59dd4e57923c80a21a5afbfa6a37a2bd108de15ea60d57f011f6ef5"
+content-hash = "d0d9c81ca0c6f7accd2db15a4290220a061d9ed96ed964a029e2f019fcfe9fff"
 
 [metadata.files]
 anyio = [
@@ -887,8 +887,8 @@ rich = [
     {file = "rich-12.0.0.tar.gz", hash = "sha256:14bfd0507edc633e021b02c45cbf7ca22e33b513817627b8de3412f047a3e798"},
 ]
 shortuuid = [
-    {file = "shortuuid-1.0.10-py3-none-any.whl", hash = "sha256:a2fe42bb7e3863a58dafe335f841dd2d0bda0198d612ba1f02829ef89a51490d"},
-    {file = "shortuuid-1.0.10.tar.gz", hash = "sha256:666e1e8a47379b3626ec40da17d3635212ea232b4647e808ea46d1c4b0be156e"},
+    {file = "shortuuid-1.0.11-py3-none-any.whl", hash = "sha256:27ea8f28b1bd0bf8f15057a3ece57275d2059d2b0bb02854f02189962c13b6aa"},
+    {file = "shortuuid-1.0.11.tar.gz", hash = "sha256:fc75f2615914815a8e4cb1501b3a513745cb66ef0fd5fc6fb9f8c3fa3481f789"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
