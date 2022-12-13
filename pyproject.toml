@@ -21,7 +21,7 @@ freezegun = "^1.2.2"
 pre-commit = "^2.20.0"
 flake8 = "^5.0.4"
 black = "^22.10.0"
-isort = "^5.10.1"
+isort = "^5.11.1"
 mypy = "^0.991"
 
 [build-system]
