@@ -11,12 +11,12 @@ repos:
         stages: [manual]
         args: ["--py310-plus"]
   - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+    rev: v5.11.3
     hooks:
       - id: isort
         args: ["--settings", "setup.cfg"]
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 22.12.0
     hooks:
       - id: black
         language_version: python3
