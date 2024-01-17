@@ -50,6 +50,8 @@ _R = TypeVar("_R")
 def mod(*field_names: str):
     def decorate(func: Callable[..., _R]):
         def wrapper(self: TodoItem, *args: P.args, **kwargs: P.kwargs) -> _R:
+            # first we call the wrapped function,
+            # in case it throws an exception we don't want to modify
             ret = func(self, *args, **kwargs)
             self._modification_date = Util.now()
             self._changes.extend(field_names)
