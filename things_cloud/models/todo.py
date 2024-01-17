@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, time, timezone
 from enum import Enum
-from functools import wraps
 from typing import Any, Callable, Deque, ParamSpec, TypeVar
 
 import cattrs
@@ -50,12 +49,9 @@ _R = TypeVar("_R")
 
 def mod(*field_names: str):
     def decorate(func: Callable[..., _R]):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs) -> _R:
-            print(func.__name__ + " was called")
+        def wrapper(self: TodoItem, *args: P.args, **kwargs: P.kwargs) -> _R:
             ret = func(self, *args, **kwargs)
             self._modification_date = Util.now()
-            assert isinstance(self._changes, Deque)
             self._changes.extend(field_names)
             self._changes.append("_modification_date")
             return ret
@@ -63,18 +59,6 @@ def mod(*field_names: str):
         return wrapper
 
     return decorate
-
-
-# def mod(func: Callable[P, _R]):
-#     @wraps(func)
-#     def modify(self, *args: P.args, **kwargs: P.kwargs) -> _R:
-#         print(func.__name__ + " was called")
-#         self._modification_date = Util.now()
-#         self._changes.append("_modification_date")
-#         self._changes.append(f"_{func.__name__}")
-#         return func(self, *args, **kwargs)
-
-#     return modify
 
 
 @define
