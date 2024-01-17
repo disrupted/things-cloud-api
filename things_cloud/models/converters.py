@@ -11,7 +11,7 @@ def bool_int(bool_or_int: int) -> bool:
     ...
 
 
-def bool_int(bool_or_int: int | bool) -> int | bool:
+def bool_int(bool_or_int: bool | int) -> int | bool:
     if isinstance(bool_or_int, bool):
         return int(bool_or_int)
     else:
