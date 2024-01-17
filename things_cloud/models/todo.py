@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, time, timezone
 from enum import Enum
 from functools import wraps
-from typing import Any, Deque
+from typing import Any, Callable, Deque, ParamSpec, TypeVar
 
 import cattrs
 from attrs import define, field
@@ -44,10 +44,14 @@ class Note:
     t: int = 0
 
 
+P = ParamSpec("P")
+_R = TypeVar("_R")
+
+
 def mod(*field_names: str):
-    def decorate(func):
+    def decorate(func: Callable[..., _R]):
         @wraps(func)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(self, *args, **kwargs) -> _R:
             print(func.__name__ + " was called")
             ret = func(self, *args, **kwargs)
             self._modification_date = Util.now()
@@ -59,6 +63,18 @@ def mod(*field_names: str):
         return wrapper
 
     return decorate
+
+
+# def mod(func: Callable[P, _R]):
+#     @wraps(func)
+#     def modify(self, *args: P.args, **kwargs: P.kwargs) -> _R:
+#         print(func.__name__ + " was called")
+#         self._modification_date = Util.now()
+#         self._changes.append("_modification_date")
+#         self._changes.append(f"_{func.__name__}")
+#         return func(self, *args, **kwargs)
+
+#     return modify
 
 
 @define
