@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, time, timezone
 from enum import Enum
+from functools import wraps
 from typing import Any, Deque
 
 import cattrs
@@ -41,6 +42,23 @@ class Note:
     ch: int = 0
     v: str = ""  # value
     t: int = 0
+
+
+def mod(*field_names: str):
+    def decorate(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            print(func.__name__ + " was called")
+            ret = func(self, *args, **kwargs)
+            self._modification_date = Util.now()
+            assert isinstance(self._changes, Deque)
+            self._changes.extend(field_names)
+            self._changes.append("_modification_date")
+            return ret
+
+        return wrapper
+
+    return decorate
 
 
 @define
@@ -104,32 +122,22 @@ class TodoItem:
     # def changes(self) -> None:
     #     self._changes.clear()
 
-    def modify(self) -> None:
-        self._modification_date = Util.now()
-        self._changes.append("_modification_date")
-
     @property
     def title(self) -> str:
         return self._title
 
     @title.setter
+    @mod("_title")
     def title(self, title: str) -> None:
-        self.modify()
-        self._changes.append("_title")
         self._title = title
-
-    @property
-    def status(self) -> Status:
-        return self._status
 
     @property
     def destination(self) -> Destination:
         return self._destination
 
     @destination.setter
+    @mod("_destination")
     def destination(self, destination: Destination) -> None:
-        self.modify()
-        self._changes.append("_destination")
         self._destination = destination
 
     @property
@@ -137,6 +145,7 @@ class TodoItem:
         return self._projects[0] if self._projects else None
 
     @project.setter
+    @mod("_projects")
     def project(self, project: TodoItem | str | None) -> None:
         if isinstance(project, TodoItem):
             if project._type != Type.PROJECT:
@@ -144,8 +153,6 @@ class TodoItem:
             self._projects = [project.uuid]
         elif project:
             self._projects = [project]
-        self.modify()
-        self._changes.append("_projects")
 
         if not project:
             self._projects.clear()
@@ -163,9 +170,8 @@ class TodoItem:
         return self._areas[0] if self._areas else None
 
     @area.setter
+    @mod("_areas")
     def area(self, area: str | None) -> None:
-        self.modify()
-        self._changes.append("_areas")
         if not area:
             self._areas.clear()
             return
@@ -178,45 +184,45 @@ class TodoItem:
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
 
+    @property
+    def status(self) -> Status:
+        return self._status
+
+    @status.setter
+    @mod("_status")
+    def status(self, status: Status) -> None:
+        if self._status is status:
+            raise ValueError(f"item already has {status.name.lower()} status")
+        self._status = status
+        match status:
+            case Status.TODO:
+                self.completion_date = None
+            case Status.COMPLETE | Status.CANCELLED:
+                self.completion_date = Util.now()
+
     def todo(self) -> None:
-        if self._status == Status.TODO:
-            raise ValueError("item already has todo status")
-        self._status = Status.TODO
-        self._changes.append("_status")
-        self.completion_date = None
+        self.status = Status.TODO
 
     def complete(self) -> None:
-        if self._status == Status.COMPLETE:
-            raise ValueError("item already has complete status")
-        self._status = Status.COMPLETE
-        self._changes.append("_status")
-        self.completion_date = Util.now()
+        self.status = Status.COMPLETE
 
     def cancel(self) -> None:
-        if self._status == Status.CANCELLED:
-            raise ValueError("item already has cancelled status")
-        self._status = Status.CANCELLED
-        self._changes.append("_status")
-        self.completion_date = Util.now()
+        self.status = Status.CANCELLED
 
+    @mod("_trashed")
     def delete(self) -> None:
-        self._changes.append("_trashed")
         self._trashed = True
-        self.modify()
 
+    @mod("_trashed")
     def restore(self) -> None:
-        self._changes.append("_trashed")
         self._trashed = False
-        self.modify()
 
+    @mod("_type", "_instance_creation_paused")
     def as_project(self) -> TodoItem:
         self._type = Type.PROJECT
-        self._changes.append("_type")
         self._instance_creation_paused = True
-        self._changes.append("_instance_creation_paused")
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
-        self.modify()
         return self
 
     @property
@@ -224,56 +230,50 @@ class TodoItem:
         return self._completion_date
 
     @completion_date.setter
+    @mod("_completion_date")
     def completion_date(self, completion_date: datetime | None) -> None:
-        self._changes.append("_completion_date")
         self._completion_date = completion_date
-        self.modify()
 
     @property
     def scheduled_date(self) -> datetime | None:
         return self._scheduled_date
 
     @scheduled_date.setter
+    @mod("_scheduled_date", "_today_index_reference_date")
     def scheduled_date(self, scheduled_date: datetime | None) -> None:
-        self._changes.append("_scheduled_date")
         self._scheduled_date = scheduled_date
-        self._changes.append("_today_index_reference_date")
         self._today_index_reference_date = scheduled_date
-        self.modify()
 
     @property
     def due_date(self) -> datetime | None:
         return self._due_date
 
     @due_date.setter
+    @mod("_due_date")
     def due_date(self, deadline: datetime | None) -> None:
-        self._changes.append("_due_date")
         self._due_date = deadline
-        self.modify()
 
     @property
     def reminder(self) -> time | None:
         return self._reminder
 
     @reminder.setter
+    @mod("_reminder")
     def reminder(self, reminder: time | None) -> None:
-        self._changes.append("_reminder")
         self._reminder = reminder
-        self.modify()
 
+    @mod("_is_evening")
     def evening(self) -> None:
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
         self._is_evening = True
-        self._changes.append("_is_evening")
-        self.modify()
 
+    @mod()
     def today(self) -> None:
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
-        self.modify()
 
     def update(self, update: TodoItem, keys: set[str]) -> None:
         for key in translate_keys_deserialize(keys):
