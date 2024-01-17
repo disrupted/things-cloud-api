@@ -8,6 +8,7 @@ import cattrs
 from attrs import define, field
 from cattr.gen import make_dict_structure_fn
 from cattrs.gen import make_dict_unstructure_fn, override
+from things_cloud.models.converters import bool_int
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -59,7 +60,7 @@ class TodoItem:
     _instance_creation_paused: bool = field(default=False, kw_only=True)
     _projects: list[str] = field(factory=list, kw_only=True)
     _areas: list[str] = field(factory=list, kw_only=True)
-    _is_evening: bool = field(default=False, converter=int, kw_only=True)
+    _is_evening: bool = field(default=False, converter=bool_int, kw_only=True)
     _tags: list[Any] = field(factory=list, kw_only=True)  # TODO: set data type
     _type: Type = field(default=Type.TASK, kw_only=True)
     _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
