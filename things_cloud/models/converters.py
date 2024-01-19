@@ -2,7 +2,7 @@ from typing import overload
 
 
 @overload
-def bool_int(bool_or_int: bool) -> int:
+def bool_int(bool_or_int: bool) -> int:  # type: ignore[overload-overlap]
     ...
 
 

@@ -8,8 +8,8 @@ import cattrs
 from attrs import define, field
 from cattr.gen import make_dict_structure_fn
 from cattrs.gen import make_dict_unstructure_fn, override
-from things_cloud.models.converters import bool_int
 
+from things_cloud.models.converters import bool_int
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
 
