@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, time, timezone
 from enum import Enum
-from typing import Any, Callable, Deque, ParamSpec, TypeVar
+from typing import Any, Deque, ParamSpec, TypeVar
+from collections.abc import Callable
 
 import cattrs
 from attrs import define, field
