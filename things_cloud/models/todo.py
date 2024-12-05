@@ -318,7 +318,7 @@ todo_st_hook = make_dict_structure_fn(
     _projects=override(rename="pr"),
     _areas=override(rename="ar"),
     _is_evening=override(
-        rename="sb", struct_hook=lambda value, _: int(value), unstruct_hook=bool
+        rename="sb", struct_hook=lambda value, _: bool(value), unstruct_hook=int
     ),
     _tags=override(rename="tg"),
     _type=override(rename="tp"),
