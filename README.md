@@ -56,7 +56,7 @@ things.edit(todo)
 
 ### Similar projects
 
-none that I know of
+- @nicolai86's Go [`things-cloud-sdk`](https://github.com/nicolai86/things-cloud-sdk); it's also a work-in-progress, relying on reverse engineering the requests on the wire
 
 ### Disclaimer
 
