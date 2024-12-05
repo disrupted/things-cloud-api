@@ -273,9 +273,14 @@ def test_cancel():
 
 def test_today():
     todo = TodoItem("test task")
+    assert todo.is_today is False
+    assert todo.is_evening is False
     todo.today()
+    assert todo.is_today is True
+    assert todo.is_evening is False
     assert todo.destination == Destination.ANYTIME
     assert todo.scheduled_date == Util.today()
+    assert todo._is_evening == 0
     assert todo._today_index_reference_date == Util.today()
     assert todo.changes == {
         "_destination",
@@ -287,11 +292,15 @@ def test_today():
 
 def test_evening():
     todo = TodoItem("test task")
+    assert todo.is_today is False
+    assert todo.is_evening is False
     todo.evening()
+    assert todo.is_today is True
+    assert todo.is_evening is True
     assert todo.destination == Destination.ANYTIME
     assert todo.scheduled_date == Util.today()
     assert todo._today_index_reference_date == Util.today()
-    assert todo._is_evening == 1
+    assert todo._is_evening == 1  # FIXME: deserialize int to bool
     assert todo.changes == {
         "_destination",
         "_scheduled_date",
