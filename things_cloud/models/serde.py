@@ -5,11 +5,6 @@ from typing import Any
 
 import orjson
 
-try:
-    from typing import override  # type: ignore[attr-defined]
-except ImportError:
-    from typing_extensions import override
-
 
 class Serde(ABC):
     field_serializers: dict[str, Callable]
@@ -35,7 +30,7 @@ class JsonSerde(Serde):
     def prettydumps(v, *, default=None) -> str:
         return JsonSerde.dumps(v, default=default, indent=orjson.OPT_INDENT_2)
 
-    @override
+    # @override  # TODO
     def serialize(self, v, *, default=None) -> str:
         for key, value in v.items():
             if serializer := self.field_serializers.get(key):
@@ -45,7 +40,7 @@ class JsonSerde(Serde):
 
         return JsonSerde.prettydumps(v, default=default)
 
-    @override
+    # @override  # TODO
     def deserialize(self, v: bytes | bytearray | str) -> Any:
         return orjson.loads(v)
 
