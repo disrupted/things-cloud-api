@@ -93,7 +93,7 @@ def test_process_new():
     assert todo._instance_creation_paused is False
     assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
     assert todo._areas == []
-    assert todo._is_evening == 0
+    assert todo._is_evening is False
     assert todo._tags == []
     assert todo._type == Type.TASK
     assert todo._due_date_suppression_date is None
