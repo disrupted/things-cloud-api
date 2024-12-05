@@ -1,15 +1,14 @@
 import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import orjson
 
-if TYPE_CHECKING:
-    try:
-        from typing import override  # type: ignore[attr-defined]
-    except ImportError:
-        from typing_extensions import override
+try:
+    from typing import override  # type: ignore[attr-defined]
+except ImportError:
+    from typing_extensions import override
 
 
 class Serde(ABC):
