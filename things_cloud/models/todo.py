@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, time, timezone
 from enum import Enum
 from typing import Any, Deque, ParamSpec, TypeVar
-from collections.abc import Callable
 
 import cattrs
 from attrs import define, field
 from cattr.gen import make_dict_structure_fn
 from cattrs.gen import make_dict_unstructure_fn, override
 
-from things_cloud.models.converters import bool_int
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
 
@@ -81,7 +80,7 @@ class TodoItem:
     _instance_creation_paused: bool = field(default=False, kw_only=True)
     _projects: list[str] = field(factory=list, kw_only=True)
     _areas: list[str] = field(factory=list, kw_only=True)
-    _is_evening: bool = field(default=False, converter=bool_int, kw_only=True)
+    _is_evening: bool = field(default=False, kw_only=True)
     _tags: list[Any] = field(factory=list, kw_only=True)  # TODO: set data type
     _type: Type = field(default=Type.TASK, kw_only=True)
     _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
@@ -265,11 +264,20 @@ class TodoItem:
     def reminder(self, reminder: time | None) -> None:
         self._reminder = reminder
 
+    @property
+    def is_today(self) -> bool:
+        return (
+            self.destination is Destination.ANYTIME
+            and self.scheduled_date == Util.today()
+        )
+
+    @property
+    def is_evening(self) -> bool:
+        return self.is_today and self._is_evening
+
     @mod("_is_evening")
     def evening(self) -> None:
-        today = Util.today()
-        self.destination = Destination.ANYTIME
-        self.scheduled_date = today
+        self.today()
         self._is_evening = True
 
     @mod()
@@ -309,7 +317,9 @@ todo_st_hook = make_dict_structure_fn(
     _instance_creation_paused=override(rename="icp"),
     _projects=override(rename="pr"),
     _areas=override(rename="ar"),
-    _is_evening=override(rename="sb"),
+    _is_evening=override(
+        rename="sb", struct_hook=lambda value, _: bool(value), unstruct_hook=int
+    ),
     _tags=override(rename="tg"),
     _type=override(rename="tp"),
     _due_date_suppression_date=override(rename="dds"),

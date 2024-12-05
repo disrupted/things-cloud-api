@@ -273,9 +273,14 @@ def test_cancel():
 
 def test_today():
     todo = TodoItem("test task")
+    assert todo.is_today is False
+    assert todo.is_evening is False
     todo.today()
+    assert todo.is_today is True
+    assert todo.is_evening is False
     assert todo.destination == Destination.ANYTIME
     assert todo.scheduled_date == Util.today()
+    assert todo._is_evening is False
     assert todo._today_index_reference_date == Util.today()
     assert todo.changes == {
         "_destination",
@@ -287,11 +292,15 @@ def test_today():
 
 def test_evening():
     todo = TodoItem("test task")
+    assert todo.is_today is False
+    assert todo.is_evening is False
     todo.evening()
+    assert todo.is_today is True
+    assert todo.is_evening is True
     assert todo.destination == Destination.ANYTIME
     assert todo.scheduled_date == Util.today()
     assert todo._today_index_reference_date == Util.today()
-    assert todo._is_evening == 1
+    assert todo._is_evening is True
     assert todo.changes == {
         "_destination",
         "_scheduled_date",
@@ -353,7 +362,7 @@ def test_deserialize():
     assert todo._instance_creation_paused is False
     assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
     assert todo._areas == []
-    assert todo._is_evening == 0
+    assert todo._is_evening is False
     assert todo._tags == []
     assert todo._type == Type.TASK
     assert todo._due_date_suppression_date is None
@@ -373,6 +382,7 @@ def test_deserialize():
     assert todo._recurrence_rule is None
     assert todo._note == Note()
     assert not todo._changes
+    assert serialize_dict(todo) == api_object
 
 
 def test_update():

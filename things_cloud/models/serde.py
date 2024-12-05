@@ -11,12 +11,10 @@ class Serde(ABC):
     type_serializers: dict[type, Callable]
 
     @abstractmethod
-    def serialize(self, v, *, default=None) -> str:
-        ...
+    def serialize(self, v, *, default=None) -> str: ...  # noqa: E704
 
     @abstractmethod
-    def deserialize(self, v) -> Any:
-        ...
+    def deserialize(self, v) -> Any: ...  # noqa: E704
 
 
 class JsonSerde(Serde):
@@ -32,6 +30,7 @@ class JsonSerde(Serde):
     def prettydumps(v, *, default=None) -> str:
         return JsonSerde.dumps(v, default=default, indent=orjson.OPT_INDENT_2)
 
+    # @override  # TODO
     def serialize(self, v, *, default=None) -> str:
         for key, value in v.items():
             if serializer := self.field_serializers.get(key):
@@ -41,8 +40,8 @@ class JsonSerde(Serde):
 
         return JsonSerde.prettydumps(v, default=default)
 
-    @staticmethod
-    def deserialize(v: bytes | bytearray | str) -> Any:
+    # @override  # TODO
+    def deserialize(self, v: bytes | bytearray | str) -> Any:
         return orjson.loads(v)
 
 
