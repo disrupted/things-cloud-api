@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 import orjson
+from typing_extensions import override
 
 
 class Serde(ABC):
@@ -11,12 +12,10 @@ class Serde(ABC):
     type_serializers: dict[type, Callable]
 
     @abstractmethod
-    def serialize(self, v, *, default=None) -> str:
-        ...
+    def serialize(self, v, *, default=None) -> str: ...
 
     @abstractmethod
-    def deserialize(self, v) -> Any:
-        ...
+    def deserialize(self, v) -> Any: ...
 
 
 class JsonSerde(Serde):
@@ -32,6 +31,7 @@ class JsonSerde(Serde):
     def prettydumps(v, *, default=None) -> str:
         return JsonSerde.dumps(v, default=default, indent=orjson.OPT_INDENT_2)
 
+    @override
     def serialize(self, v, *, default=None) -> str:
         for key, value in v.items():
             if serializer := self.field_serializers.get(key):
@@ -41,8 +41,8 @@ class JsonSerde(Serde):
 
         return JsonSerde.prettydumps(v, default=default)
 
-    @staticmethod
-    def deserialize(v: bytes | bytearray | str) -> Any:
+    @override
+    def deserialize(self, v: bytes | bytearray | str) -> Any:
         return orjson.loads(v)
 
 
