@@ -1,159 +1,424 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from datetime import datetime, time, timezone
-from enum import Enum
-from typing import Any, Deque, ParamSpec, TypeVar
+from collections.abc import Iterator
+from datetime import datetime, time
+from enum import IntEnum, StrEnum
+from typing import Annotated, Any, Literal
 
-import cattrs
-from attrs import define, field
-from cattr.gen import make_dict_structure_fn
-from cattrs.gen import make_dict_unstructure_fn, override
+import pydantic
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
 
-SERDE = TodoSerde()
+ShortUUID = Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)]
 
 
-class Type(int, Enum):
+class CommitResponse(pydantic.BaseModel):
+    server_head_index: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="server-head-index")
+    ]
+
+
+class HistoryResponse(pydantic.BaseModel):
+    current_item_index: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="current-item-index")
+    ]
+    end_total_content_size: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="end-total-content-size")
+    ]
+    latest_total_content_size: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="latest-total-content-size")
+    ]
+    schema_: Annotated[pydantic.PositiveInt, pydantic.Field(alias="schema")]  # 301
+    start_total_content_size: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="start-total-content-size")
+    ]
+    items: Annotated[list[dict[str, Body]], pydantic.Field(min_length=1)]
+
+    @property
+    def updates(self) -> Iterator[Update]:
+        for item in self.items:
+            assert (
+                isinstance(item, dict) and len(item) == 1
+            ), "Expected items dict with one key-value pair"
+            key, value = next(iter(item.items()))
+            yield Update(id=key, body=value)
+
+
+class Update(pydantic.BaseModel):
+    id: ShortUUID
+    body: Body = pydantic.Field(discriminator="type")
+
+    # @pydantic.model_validator(mode="after")
+    # def inject_task_id(self) -> Self:
+    #     self.body.payload._uuid = self.id
+    #     return self
+
+    def to_api_payload(self) -> dict[ShortUUID, dict[str, Any]]:
+        return {self.id: self.body.to_api_payload()}
+
+
+class UpdateType(IntEnum):
+    NEW = 0
+    EDIT = 1
+
+
+class EntityType(StrEnum):
+    TASK_6 = "Task6"
+
+
+class NewBody(pydantic.BaseModel):
+    type: Annotated[Literal[UpdateType.NEW], pydantic.Field(alias="t")] = UpdateType.NEW
+    payload: Annotated[TodoApiObject, pydantic.Field(alias="p")]
+    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+
+    def to_api_payload(self) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True)
+
+
+class EditBody(pydantic.BaseModel):
+    type: Annotated[Literal[UpdateType.EDIT], pydantic.Field(alias="t")] = (
+        UpdateType.EDIT
+    )
+    payload: Annotated[TodoDeltaApiObject, pydantic.Field(alias="p")]
+    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+
+    def to_api_payload(self) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+Body = Annotated[NewBody | EditBody, pydantic.Field(discriminator="type")]
+
+
+class Type(IntEnum):
     TASK = 0
     PROJECT = 1
     HEADING = 2
 
 
-class Destination(int, Enum):
+class Destination(IntEnum):
     # destination: {0: inbox, 1: anytime/today/evening, 2: someday}
     INBOX = 0
     ANYTIME = 1
     SOMEDAY = 2
 
 
-class Status(int, Enum):
+class Status(IntEnum):
     TODO = 0
     CANCELLED = 2
     COMPLETE = 3
 
 
-@define
-class Note:
-    _t: str = field(init=False, default="tx")
+class Note(pydantic.BaseModel):
+    t_: str = pydantic.Field(alias="_t", default="tx")
     ch: int = 0
     v: str = ""  # value
     t: int = 0
 
 
-P = ParamSpec("P")
-_R = TypeVar("_R")
+Timestamp = Annotated[
+    datetime,
+    pydantic.PlainValidator(
+        TodoSerde.from_timestamp, json_schema_input_type=datetime | int
+    ),
+    pydantic.PlainSerializer(TodoSerde.timestamp_rounded),
+]
+BoolBit = Annotated[bool, pydantic.PlainSerializer(int)]
 
 
-def mod(*field_names: str):
-    def decorate(func: Callable[..., _R]):
-        def wrapper(self: TodoItem, *args: P.args, **kwargs: P.kwargs) -> _R:
-            # first we call the wrapped function,
-            # in case it throws an exception we don't want to modify
-            ret = func(self, *args, **kwargs)
-            self._modification_date = Util.now()
-            self._changes.extend(field_names)
-            self._changes.append("_modification_date")
-            return ret
+class TodoApiObject(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(populate_by_name=True)
 
-        return wrapper
+    index: Annotated[int, pydantic.Field(alias="ix")]
+    title: Annotated[str, pydantic.Field(alias="tt")]
+    status: Annotated[Status, pydantic.Field(alias="ss")]
+    destination: Annotated[Destination, pydantic.Field(alias="st")]
+    creation_date: Annotated[Timestamp | None, pydantic.Field(alias="cd")]
+    modification_date: Annotated[Timestamp | None, pydantic.Field(alias="md")]
+    scheduled_date: Annotated[Timestamp | None, pydantic.Field(alias="sr")]
+    today_index_reference_date: Annotated[Timestamp | None, pydantic.Field(alias="tir")]
+    completion_date: Annotated[Timestamp | None, pydantic.Field(alias="sp")]
+    due_date: Annotated[Timestamp | None, pydantic.Field(alias="dd")]
+    trashed: Annotated[bool, pydantic.Field(alias="tr")]
+    instance_creation_paused: Annotated[bool, pydantic.Field(alias="icp")]
+    projects: Annotated[list[str], pydantic.Field(alias="pr")]
+    areas: Annotated[list[str], pydantic.Field(alias="ar")]
+    evening: Annotated[BoolBit, pydantic.Field(alias="sb")]
+    tags: Annotated[list[Any], pydantic.Field(alias="tg")]
+    type: Annotated[Type, pydantic.Field(alias="tp")]
+    due_date_suppression_date: Annotated[Timestamp | None, pydantic.Field(alias="dds")]
+    repeating_template: Annotated[list[str], pydantic.Field(alias="rt")]
+    repeater_migration_date: Annotated[
+        Any, pydantic.Field(alias="rmd")
+    ]  # TODO: date type yet to be seen
+    delegate: Annotated[
+        list[Any], pydantic.Field(alias="dl")
+    ]  # TODO: date type yet to be seen
+    due_date_offset: Annotated[int, pydantic.Field(alias="do")]
+    last_alarm_interaction_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="lai")
+    ]
+    action_group: Annotated[list[str], pydantic.Field(alias="agr")]
+    leaves_tombstone: Annotated[bool, pydantic.Field(alias="lt")]
+    instance_creation_count: Annotated[int, pydantic.Field(alias="icc")]
+    today_index: Annotated[int, pydantic.Field(alias="ti")]
+    reminder: Annotated[time | None, pydantic.Field(alias="ato")]
+    instance_creation_start_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="icsd")
+    ]
+    repeater: Annotated[Any, pydantic.Field(alias="rp")]
+    after_completion_reference_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="acrd")
+    ]
+    recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")]
+    note: Annotated[Note, pydantic.Field(alias="nt")]
 
-    return decorate
+    def to_todo(self) -> TodoItem:
+        todo = TodoItem(
+            index=self.index,
+            title=self.title,
+            creation_date=self.creation_date,
+            modification_date=self.modification_date,
+            scheduled_date=self.scheduled_date,
+            today_index_reference_date=self.today_index_reference_date,
+            completion_date=self.completion_date,
+            due_date=self.due_date,
+            trashed=self.trashed,
+            instance_creation_paused=self.instance_creation_paused,
+            tags=self.tags,
+            due_date_suppression_date=self.due_date_suppression_date,
+            repeating_template=self.repeating_template,
+            repeater_migration_date=self.repeater_migration_date,
+            delegate=self.delegate,
+            due_date_offset=self.due_date_offset,
+            last_alarm_interaction_date=self.last_alarm_interaction_date,
+            action_group=self.action_group,
+            leaves_tombstone=self.leaves_tombstone,
+            instance_creation_count=self.instance_creation_count,
+            today_index=self.today_index,
+            reminder=self.reminder,
+            instance_creation_start_date=self.instance_creation_start_date,
+            repeater=self.repeater,
+            after_completion_reference_date=self.after_completion_reference_date,
+            recurrence_rule=self.recurrence_rule,
+            note=self.note,
+        )
+        todo._status = self.status
+        todo._destination = self.destination
+        todo._projects = self.projects
+        todo._areas = self.areas
+        todo._evening = self.evening
+        todo._type = self.type
+        todo._api_object = self
+        return todo
 
 
-@define
-class TodoItem:
-    _uuid: str = field(factory=Util.uuid, init=False)
-    _index: int = field(default=0, kw_only=True)
-    _title: str = field(default="")
-    _status: Status = field(default=Status.TODO, kw_only=True)
-    _destination: Destination = field(default=Destination.INBOX, kw_only=True)
-    _creation_date: datetime | None = field(factory=Util.now, kw_only=True)
-    _modification_date: datetime | None = field(factory=Util.now, kw_only=True)
-    _scheduled_date: datetime | None = field(default=None, kw_only=True)
-    _today_index_reference_date: datetime | None = field(default=None, kw_only=True)
-    _completion_date: datetime | None = field(default=None, kw_only=True)
-    _due_date: datetime | None = field(default=None, kw_only=True)
-    _trashed: bool = field(default=False, kw_only=True)
-    _instance_creation_paused: bool = field(default=False, kw_only=True)
-    _projects: list[str] = field(factory=list, kw_only=True)
-    _areas: list[str] = field(factory=list, kw_only=True)
-    _is_evening: bool = field(default=False, kw_only=True)
-    _tags: list[Any] = field(factory=list, kw_only=True)  # TODO: set data type
-    _type: Type = field(default=Type.TASK, kw_only=True)
-    _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
-    _repeating_template: list[str] = field(factory=list, kw_only=True)
-    _repeater_migration_date: Any = field(
-        default=None, kw_only=True
-    )  # TODO: date type yet to be seen
-    _delegate: list[Any] = field(
-        factory=list, kw_only=True
-    )  # TODO: date type yet to be seen
-    _due_date_offset: int = field(default=0, kw_only=True)
-    _last_alarm_interaction_date: datetime | None = field(default=None, kw_only=True)
-    _action_group: list[str] = field(factory=list, kw_only=True)
-    _leaves_tombstone: bool = field(default=False, kw_only=True)
-    _instance_creation_count: int = field(default=0, kw_only=True)
-    _today_index: int = field(default=0, kw_only=True)
-    _reminder: time | None = field(default=None, kw_only=True)
-    _instance_creation_start_date: datetime | None = field(default=None, kw_only=True)
-    _repeater: Any = field(default=None, kw_only=True)  # TODO: date type yet to be seen
-    _after_completion_reference_date: datetime | None = field(
-        default=None, kw_only=True
+class TodoDeltaApiObject(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(populate_by_name=True)
+
+    index: Annotated[int | None, pydantic.Field(alias="ix")] = None
+    title: Annotated[str | None, pydantic.Field(alias="tt")] = None
+    status: Annotated[Status | None, pydantic.Field(alias="ss")] = None
+    destination: Annotated[Destination | None, pydantic.Field(alias="st")] = None
+    creation_date: Annotated[Timestamp | None, pydantic.Field(alias="cd")] = None
+    modification_date: Annotated[Timestamp | None, pydantic.Field(alias="md")] = None
+    scheduled_date: Annotated[Timestamp | None, pydantic.Field(alias="sr")] = None
+    today_index_reference_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="tir")
+    ] = None
+    completion_date: Annotated[Timestamp | None, pydantic.Field(alias="sp")] = None
+    due_date: Annotated[Timestamp | None, pydantic.Field(alias="dd")] = None
+    trashed: Annotated[bool | None, pydantic.Field(alias="tr")] = None
+    instance_creation_paused: Annotated[bool | None, pydantic.Field(alias="icp")] = None
+    projects: Annotated[list[str] | None, pydantic.Field(alias="pr")] = None
+    areas: Annotated[list[str] | None, pydantic.Field(alias="ar")] = None
+    evening: Annotated[BoolBit | None, pydantic.Field(alias="sb")] = None
+    tags: Annotated[list[Any] | None, pydantic.Field(alias="tg")] = None
+    type: Annotated[Type | None, pydantic.Field(alias="tp")] = None
+    due_date_suppression_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="dds")
+    ] = None
+    repeating_template: Annotated[list[str] | None, pydantic.Field(alias="rt")] = None
+    repeater_migration_date: Annotated[Any | None, pydantic.Field(alias="rmd")] = None
+    delegate: Annotated[list[Any] | None, pydantic.Field(alias="dl")] = None
+    due_date_offset: Annotated[int | None, pydantic.Field(alias="do")] = None
+    last_alarm_interaction_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="lai")
+    ] = None
+    action_group: Annotated[list[str] | None, pydantic.Field(alias="agr")] = None
+    leaves_tombstone: Annotated[bool | None, pydantic.Field(alias="lt")] = None
+    instance_creation_count: Annotated[int | None, pydantic.Field(alias="icc")] = None
+    today_index: Annotated[int | None, pydantic.Field(alias="ti")] = None
+    reminder: Annotated[time | None, pydantic.Field(alias="ato")] = None
+    instance_creation_start_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="icsd")
+    ] = None
+    repeater: Annotated[Any | None, pydantic.Field(alias="rp")] = None
+    after_completion_reference_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="acrd")
+    ] = None
+    recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")] = None
+    note: Annotated[Note | None, pydantic.Field(alias="nt")] = None
+
+    def apply_edits(self, todo: TodoItem) -> None:
+        keys = self.model_dump(by_alias=False, exclude_none=True).keys()
+        if not keys:
+            raise RuntimeError("there are no edits to apply")
+        for key in keys:
+            old_value = getattr(todo, key)
+            new_value = getattr(self, key)
+            if old_value == new_value:
+                msg = f"old and new value are identical: {new_value}"
+                raise ValueError(msg)
+            setattr(todo, key, new_value)
+
+
+class TodoItem(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(validate_assignment=True)
+
+    _uuid: ShortUUID = pydantic.PrivateAttr(default_factory=Util.uuid)
+    index: int = pydantic.Field(default=0)
+    title: str
+    _status: Status = pydantic.PrivateAttr(default=Status.TODO)
+    _destination: Destination = pydantic.PrivateAttr(default=Destination.INBOX)
+    creation_date: datetime | None = pydantic.Field(default_factory=Util.now)
+    modification_date: datetime | None = pydantic.Field(default_factory=Util.now)
+    scheduled_date: datetime | None = pydantic.Field(default=None)
+    today_index_reference_date: datetime | None = pydantic.Field(
+        default=None, repr=False
     )
-    _recurrence_rule: str | None = field(
-        default=None, kw_only=True
-    )  # TODO: weird XML values
-    _note: Note = field(factory=Note, kw_only=True)
-    _changes: Deque[str] = field(factory=Deque, init=False)
+    completion_date: datetime | None = pydantic.Field(default=None)
+    due_date: datetime | None = pydantic.Field(default=None)
+    trashed: bool = pydantic.Field(default=False)
+    instance_creation_paused: bool = pydantic.Field(default=False)
+    _projects: list[str] = pydantic.PrivateAttr(default_factory=list)
+    _areas: list[str] = pydantic.PrivateAttr(default_factory=list)
+    _evening: bool = pydantic.PrivateAttr(default=False)
+    tags: list[Any] = pydantic.Field(default_factory=list)  # TODO: set data type
+    _type: Type = pydantic.PrivateAttr(default=Type.TASK)
+    due_date_suppression_date: datetime | None = pydantic.Field(default=None)
+    repeating_template: list[str] = pydantic.Field(default_factory=list)
+    repeater_migration_date: Any = pydantic.Field(default=None)
+    delegate: list[Any] = pydantic.Field(default_factory=list)
+    due_date_offset: int = pydantic.Field(default=0)
+    last_alarm_interaction_date: datetime | None = pydantic.Field(default=None)
+    action_group: list[str] = pydantic.Field(default_factory=list)
+    leaves_tombstone: bool = pydantic.Field(default=False)
+    instance_creation_count: int = pydantic.Field(default=0)
+    today_index: int = pydantic.Field(default=0)
+    reminder: time | None = pydantic.Field(default=None)
+    instance_creation_start_date: datetime | None = pydantic.Field(default=None)
+    repeater: Any = pydantic.Field(default=None)  # TODO: date type yet to be seen
+    after_completion_reference_date: datetime | None = pydantic.Field(default=None)
+    recurrence_rule: str | None = pydantic.Field(default=None)  # TODO: weird XML values
+    note: Note = pydantic.Field(default_factory=Note)
+    _api_object: TodoApiObject | None = pydantic.PrivateAttr(default=None)
+
+    def to_update(self) -> Update:
+        if not self._api_object:
+            complete = self._to_new()
+            body = NewBody(payload=complete)
+            update = Update(id=self.uuid, body=body)
+        else:
+            delta = self._to_edit()
+            body = EditBody(payload=delta)
+            update = Update(id=self.uuid, body=body)
+        return update
+
+    def _to_new(self) -> TodoApiObject:
+        if self._api_object:
+            msg = (
+                f"current version exists for todo, use {self._to_edit.__name__} instead"
+            )
+            raise ValueError(msg)
+
+        return TodoApiObject(
+            index=self.index,
+            title=self.title,
+            status=self.status,
+            destination=self.destination,
+            creation_date=self.creation_date,
+            modification_date=self.modification_date,
+            scheduled_date=self.scheduled_date,
+            today_index_reference_date=self.today_index_reference_date,
+            completion_date=self.completion_date,
+            due_date=self.due_date,
+            trashed=self.trashed,
+            instance_creation_paused=self.instance_creation_paused,
+            projects=self._projects,
+            areas=self._areas,
+            evening=self.is_evening,
+            tags=self.tags,
+            type=self._type,
+            due_date_suppression_date=self.due_date_suppression_date,
+            repeating_template=self.repeating_template,
+            repeater_migration_date=self.repeater_migration_date,
+            delegate=self.delegate,
+            due_date_offset=self.due_date_offset,
+            last_alarm_interaction_date=self.last_alarm_interaction_date,
+            action_group=self.action_group,
+            leaves_tombstone=self.leaves_tombstone,
+            instance_creation_count=self.instance_creation_count,
+            today_index=self.today_index,
+            reminder=self.reminder,
+            instance_creation_start_date=self.instance_creation_start_date,
+            repeater=self.repeater,
+            after_completion_reference_date=self.after_completion_reference_date,
+            recurrence_rule=self.recurrence_rule,
+            note=self.note,
+        )
+
+    def _to_edit(self) -> TodoDeltaApiObject:
+        if not self._api_object:
+            msg = f"no current version exists for todo, use {self._to_new.__name__} instead"
+            raise ValueError(msg)
+
+        keys = self.model_dump(by_alias=False).keys()
+        edits = {}
+        for key in keys:
+            current_value = getattr(self._api_object, key)
+            new_value = getattr(self, key)
+            if current_value == new_value:
+                continue
+            edits[key] = new_value
+        if not edits:
+            raise ValueError("no changes found")
+        return TodoDeltaApiObject.model_validate(edits)
+
+    def _commit(self, complete_or_delta: TodoApiObject | TodoDeltaApiObject) -> None:
+        if isinstance(complete_or_delta, TodoApiObject):
+            self._api_object = complete_or_delta
+
+        else:
+            delta = complete_or_delta.model_dump(by_alias=False, exclude_none=True)
+            for key in delta.keys():
+                new_value = getattr(delta, key)
+                setattr(self._api_object, key, new_value)
 
     @property
-    def uuid(self) -> str:
+    def uuid(self) -> ShortUUID:
         return self._uuid
 
+    @pydantic.computed_field
     @property
-    def changes(self) -> set:
-        return set(self._changes)
-
-    def reset_changes(self) -> None:
-        self._changes.clear()
-
-    # @changes.deleter
-    # def changes(self) -> None:
-    #     self._changes.clear()
-
-    @property
-    def title(self) -> str:
-        return self._title
-
-    @title.setter
-    @mod("_title")
-    def title(self, title: str) -> None:
-        self._title = title
-
-    @property
-    def destination(self) -> Destination:
-        return self._destination
-
-    @destination.setter
-    @mod("_destination")
-    def destination(self, destination: Destination) -> None:
-        self._destination = destination
+    def type(self) -> Type:
+        return self._type
 
     @property
     def project(self) -> str | None:
         return self._projects[0] if self._projects else None
 
     @project.setter
-    @mod("_projects")
     def project(self, project: TodoItem | str | None) -> None:
         if isinstance(project, TodoItem):
-            if project._type != Type.PROJECT:
+            if project.type is not Type.PROJECT:
                 raise ValueError("argument must be a project")
+            if self.uuid == project.uuid:
+                raise ValueError("cannot assign self as project")
             self._projects = [project.uuid]
         elif project:
+            if self.uuid == project:
+                raise ValueError("cannot assign self as project")
             self._projects = [project]
 
         if not project:
@@ -164,7 +429,7 @@ class TodoItem:
         if self.area:
             self.area = None
         # move out of inbox
-        if self.destination == Destination.INBOX:
+        if self.destination is Destination.INBOX:
             self.destination = Destination.ANYTIME
 
     @property
@@ -172,7 +437,6 @@ class TodoItem:
         return self._areas[0] if self._areas else None
 
     @area.setter
-    @mod("_areas")
     def area(self, area: str | None) -> None:
         if not area:
             self._areas.clear()
@@ -183,15 +447,15 @@ class TodoItem:
         if self.project:
             self.project = None
         # move out of inbox
-        if self.destination == Destination.INBOX:
+        if self.destination is Destination.INBOX:
             self.destination = Destination.ANYTIME
 
+    @pydantic.computed_field
     @property
     def status(self) -> Status:
         return self._status
 
     @status.setter
-    @mod("_status")
     def status(self, status: Status) -> None:
         if self._status is status:
             raise ValueError(f"item already has {status.name.lower()} status")
@@ -211,58 +475,41 @@ class TodoItem:
     def cancel(self) -> None:
         self.status = Status.CANCELLED
 
-    @mod("_trashed")
+    @pydantic.computed_field
+    @property
+    def destination(self) -> Destination:
+        return self._destination
+
+    @destination.setter
+    def destination(self, destination: Destination) -> None:
+        if self.type is not Type.TASK:
+            raise ValueError("destination can only be changed for a task")
+        self._destination = destination
+
     def delete(self) -> None:
-        self._trashed = True
+        if self.trashed:
+            raise ValueError("item is already trashed")
+        self.trashed = True
 
-    @mod("_trashed")
     def restore(self) -> None:
-        self._trashed = False
+        if not self.trashed:
+            raise ValueError("item is not trashed")
+        self.trashed = False
 
-    @mod("_type", "_instance_creation_paused")
     def as_project(self) -> TodoItem:
+        if self._type is not Type.TASK:
+            raise ValueError("only a task can be converted to project")
         self._type = Type.PROJECT
-        self._instance_creation_paused = True
-        if self.destination == Destination.INBOX:
-            self.destination = Destination.ANYTIME
+        self.instance_creation_paused = True
+        if self._destination is Destination.INBOX:
+            self._destination = Destination.ANYTIME
         return self
 
-    @property
-    def completion_date(self) -> datetime | None:
-        return self._completion_date
-
-    @completion_date.setter
-    @mod("_completion_date")
-    def completion_date(self, completion_date: datetime | None) -> None:
-        self._completion_date = completion_date
-
-    @property
-    def scheduled_date(self) -> datetime | None:
-        return self._scheduled_date
-
-    @scheduled_date.setter
-    @mod("_scheduled_date", "_today_index_reference_date")
-    def scheduled_date(self, scheduled_date: datetime | None) -> None:
-        self._scheduled_date = scheduled_date
-        self._today_index_reference_date = scheduled_date
-
-    @property
-    def due_date(self) -> datetime | None:
-        return self._due_date
-
-    @due_date.setter
-    @mod("_due_date")
-    def due_date(self, deadline: datetime | None) -> None:
-        self._due_date = deadline
-
-    @property
-    def reminder(self) -> time | None:
-        return self._reminder
-
-    @reminder.setter
-    @mod("_reminder")
-    def reminder(self, reminder: time | None) -> None:
-        self._reminder = reminder
+    # @scheduled_date.setter
+    # @mod("scheduled_date_", "today_index_reference_date_")
+    # def scheduled_date(self, scheduled_date: datetime | None) -> None:
+    #     self.scheduled_date_ = scheduled_date
+    #     self.today_index_reference_date_ = scheduled_date
 
     @property
     def is_today(self) -> bool:
@@ -273,135 +520,13 @@ class TodoItem:
 
     @property
     def is_evening(self) -> bool:
-        return self.is_today and self._is_evening
+        return self.is_today and self._evening
 
-    @mod("_is_evening")
     def evening(self) -> None:
         self.today()
-        self._is_evening = True
+        self._evening = True
 
-    @mod()
     def today(self) -> None:
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
-
-    def update(self, update: TodoItem, keys: set[str]) -> None:
-        for key in translate_keys_deserialize(keys):
-            val = getattr(update, key)
-            setattr(self, key, val)
-
-
-converter = cattrs.Converter(forbid_extra_keys=True)
-todo_unst_hook = make_dict_unstructure_fn(
-    TodoItem,
-    converter,
-    _uuid=override(omit=True),
-    _changes=override(omit=True),
-)
-
-todo_st_hook = make_dict_structure_fn(
-    TodoItem,
-    converter,
-    _index=override(rename="ix"),
-    _title=override(rename="tt"),
-    _status=override(rename="ss"),
-    _destination=override(rename="st"),
-    _creation_date=override(rename="cd"),
-    _modification_date=override(rename="md"),
-    _scheduled_date=override(rename="sr"),
-    _today_index_reference_date=override(rename="tir"),
-    _completion_date=override(rename="sp"),
-    _due_date=override(rename="dd"),
-    _in_trash=override(rename="tr"),
-    _instance_creation_paused=override(rename="icp"),
-    _projects=override(rename="pr"),
-    _areas=override(rename="ar"),
-    _is_evening=override(
-        rename="sb", struct_hook=lambda value, _: bool(value), unstruct_hook=int
-    ),
-    _tags=override(rename="tg"),
-    _type=override(rename="tp"),
-    _due_date_suppression_date=override(rename="dds"),
-    _repeating_template=override(rename="rt"),
-    _repeater_migration_date=override(rename="rmd"),
-    _delegate=override(rename="dl"),
-    _due_date_offset=override(rename="do"),
-    _last_alarm_interaction_date=override(rename="lai"),
-    _action_group=override(rename="agr"),
-    _leaves_tombstone=override(rename="lt"),
-    _instance_creation_count=override(rename="icc"),
-    _today_index=override(rename="ti"),
-    _reminder=override(rename="ato"),
-    _instance_creation_start_date=override(rename="icsd"),
-    _repeater=override(rename="rp"),
-    _after_completion_reference_date=override(rename="acrd"),
-    _recurrence_rule=override(rename="rr"),
-    _note=override(rename="nt"),
-)
-
-
-converter.register_unstructure_hook(TodoItem, todo_unst_hook)
-converter.register_structure_hook(TodoItem, todo_st_hook)
-
-converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
-converter.register_structure_hook(
-    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp, timezone.utc)
-)
-
-ALIASES_UNSTRUCT = {
-    "_index": "ix",
-    "_title": "tt",
-    "_status": "ss",
-    "_destination": "st",
-    "_creation_date": "cd",
-    "_modification_date": "md",
-    "_scheduled_date": "sr",
-    "_today_index_reference_date": "tir",
-    "_completion_date": "sp",
-    "_due_date": "dd",
-    "_trashed": "tr",
-    "_instance_creation_paused": "icp",
-    "_projects": "pr",
-    "_areas": "ar",
-    "_is_evening": "sb",
-    "_tags": "tg",
-    "_type": "tp",
-    "_due_date_suppression_date": "dds",
-    "_repeating_template": "rt",
-    "_repeater_migration_date": "rmd",
-    "_delegate": "dl",
-    "_due_date_offset": "do",
-    "_last_alarm_interaction_date": "lai",
-    "_action_group": "agr",
-    "_leaves_tombstone": "lt",
-    "_instance_creation_count": "icc",
-    "_today_index": "ti",
-    "_reminder": "ato",
-    "_instance_creation_start_date": "icsd",
-    "_repeater": "rp",
-    "_after_completion_reference_date": "acrd",
-    "_recurrence_rule": "rr",
-    "_note": "nt",
-}
-
-ALIASES_STRUCT = {v: k for k, v in ALIASES_UNSTRUCT.items()}
-
-
-def get_changes(todo: TodoItem) -> dict:
-    return serialize_dict(todo, todo.changes)
-
-
-def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
-    # d = asdict(todo)
-    d = converter.unstructure(todo)
-    # filter allowed keys
-    return {ALIASES_UNSTRUCT[k]: v for k, v in d.items() if keys is None or k in keys}
-
-
-def deserialize(api_object: dict) -> TodoItem:
-    return converter.structure(api_object, TodoItem)
-
-
-def translate_keys_deserialize(keys: set[str]) -> set[str]:
-    return {ALIASES_STRUCT[k] for k in keys}

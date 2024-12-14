@@ -5,24 +5,57 @@ description = "Client for Things Cloud API"
 authors = ["disrupted <hi@salomonpopp.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-orjson = "^3.9.10"
-shortuuid = "^1.0.11"
-httpx = "^0.23.3"
-structlog = "^24.1.0"
-attrs = "^23.2.0"
-cattrs = "^23.1.2"
+python = "^3.12"
+orjson = "^3.10.12"
+shortuuid = "^1.0.13"
+httpx = "^0.28.1"
+structlog = "^24.4.0"
+attrs = "^24.2.0"
+cattrs = "^24.1.2"
+pydantic = "^2.10.3"
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.4.4"
-pytest-mock = "^3.12.0"
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-mock = "^3.14.0"
+pytest-asyncio = "^0.25.0"
+pytest-cov = "^6.0.0"
 pytest-clarity = "^1.0.1"
-freezegun = "^1.2.2"
-pre-commit = "^3.6.0"
-flake8 = "^7.0.0"
-black = "^23.12.1"
-isort = "^5.12.0"
-mypy = "^1.8"
+freezegun = "^1.5.1"
+pre-commit = "^4.0.1"
+virtualenv = "^20.28.0" # HACK: fix pre-commit: ModuleNotFoundError: No module named 'distutils'
+ruff = "^0.8.3"
+pyright = { extras = ["nodejs"], version = "^1.1.390" }
+
+[tool.ruff]
+output-format = "grouped"
+show-fixes = true
+
+[tool.ruff.lint]
+# For a list of all possible rules visit https://docs.astral.sh/ruff/rules/
+select = [
+  "F", # Pyflakes
+  "E", # pycodestyle Errors
+  "W", # pycodestyle Warnings
+  "C90", # mccabe
+  "I", # isort
+  "UP", # pyupgrade
+  "B", # flake8-bugbear
+  "RUF", # Ruff-specific rules
+]
+ignore = [
+  # Rules in conflict with `ruff-format` -- START
+  "W191", # Checks for indentation that uses tabs. Spaces are preferred.
+  # "E111", # Checks for indentation with a non-multiple of 4 spaces, add when out of nursery
+  # "E114", # Checks for indentation of comments with a non-multiple of 4 spaces, add when out of nursery
+  # "E117", # Checks for over-indented code, add when out of nursery
+  "E501", # Line too long
+  # Rules in conflict with `ruff-format` -- END
+  "RUF012", # type class attrs with `ClassVar` -- Too strict/trigger-happy
+]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = "--cov=things_cloud --cov-report term-missing"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
