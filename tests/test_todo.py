@@ -7,6 +7,7 @@ from things_cloud.models.todo import (
     Destination,
     Note,
     Status,
+    TodoApiObject,
     TodoItem,
     Type,
 )
@@ -368,7 +369,7 @@ def test_evening():
     }
 
 
-def test_deserialize():
+def test_serde():
     api_object = {
         "ix": 1234,
         "cd": 1641234567,
@@ -404,43 +405,84 @@ def test_deserialize():
         "sb": 0,
         "agr": [],
     }
-    todo = TodoItem.model_validate(api_object)
+    todo = TodoApiObject.model_validate(api_object)
     time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
-    assert todo._index == 1234
+    assert todo.index == 1234
     assert todo.title == "test task"
-    assert todo.status_ == Status.TODO
-    assert todo._destination == Destination.ANYTIME
-    assert todo._creation_date == time
-    assert todo._modification_date == time
-    assert todo._scheduled_date is None
-    assert todo._today_index_reference_date is None
-    assert todo.completion_date_ is None
-    assert todo._due_date is None
-    assert todo._trashed is False
-    assert todo._instance_creation_paused is False
-    assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
-    assert todo._areas == []
-    assert todo._is_evening is False
-    assert todo._tags == []
-    assert todo._type == Type.TASK
-    assert todo._due_date_suppression_date is None
-    assert todo._repeating_template == []
-    assert todo._repeater_migration_date is None
-    assert todo._delegate == []
-    assert todo._due_date_offset == 0
-    assert todo._last_alarm_interaction_date is None
-    assert todo._action_group == []
-    assert todo._leaves_tombstone is False
-    assert todo._instance_creation_count == 0
-    assert todo._today_index == 0
-    assert todo._reminder is None
-    assert todo._instance_creation_start_date is None
-    assert todo._repeater is None
-    assert todo._after_completion_reference_date is None
-    assert todo._recurrence_rule is None
-    assert todo._note == Note()
-    assert not todo._changes
+    assert todo.status is Status.TODO
+    assert todo.destination is Destination.ANYTIME
+    assert todo.creation_date == time
+    assert todo.modification_date == time
+    assert todo.scheduled_date is None
+    assert todo.today_index_reference_date is None
+    assert todo.completion_date is None
+    assert todo.due_date is None
+    assert todo.trashed is False
+    assert todo.instance_creation_paused is False
+    assert todo.projects == ["ABCd1ee0ykmXYZqT98huxa"]
+    assert todo.areas == []
+    assert todo.is_evening is False
+    assert todo.tags == []
+    assert todo.type == Type.TASK
+    assert todo.due_date_suppression_date is None
+    assert todo.repeating_template == []
+    assert todo.repeater_migration_date is None
+    assert todo.delegate == []
+    assert todo.due_date_offset == 0
+    assert todo.last_alarm_interaction_date is None
+    assert todo.action_group == []
+    assert todo.leaves_tombstone is False
+    assert todo.instance_creation_count == 0
+    assert todo.today_index == 0
+    assert todo.reminder is None
+    assert todo.instance_creation_start_date is None
+    assert todo.repeater is None
+    assert todo.after_completion_reference_date is None
+    assert todo.recurrence_rule is None
+    assert todo.note == Note()
+    # assert not todo._changes
     assert todo.model_dump(mode="json", by_alias=True) == api_object
+
+
+def test_todo_from_api_object():
+    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
+    api_object = TodoApiObject.model_validate(
+        {
+            "index": 1234,
+            "title": "test task",
+            "status": Status.TODO,
+            "destination": Destination.ANYTIME,
+            "creation_date": time,
+            "modification_date": time,
+            "scheduled_date": None,
+            "today_index_reference_date": None,
+            "completion_date": None,
+            "due_date": None,
+            "trashed": False,
+            "instance_creation_paused": False,
+            "projects": ["ABCd1ee0ykmXYZqT98huxa"],
+            "areas": [],
+            "is_evening": False,
+            "tags": [],
+            "type": Type.TASK,
+            "due_date_suppression_date": None,
+            "repeating_template": [],
+            "repeater_migration_date": None,
+            "delegate": [],
+            "due_date_offset": 0,
+            "last_alarm_interaction_date": None,
+            "action_group": [],
+            "leaves_tombstone": False,
+            "instance_creation_count": 0,
+            "today_index": 0,
+            "reminder": None,
+            "instance_creation_start_date": None,
+            "repeater": None,
+            "after_completion_reference_date": None,
+            "recurrence_rule": None,
+            "note": Note(),
+        }
+    )
 
 
 def test_update():

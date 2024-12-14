@@ -1,6 +1,6 @@
-import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from datetime import datetime, time, timezone
 from typing import Any
 
 import orjson
@@ -54,12 +54,18 @@ class TodoSerde(JsonSerde):
     }
 
     type_serializers: dict[type, Callable] = {
-        dt.time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
-        dt.datetime: lambda d: d.timestamp(),
+        time: lambda t: (t.hour * 60 + t.minute) * 60 + t.second,
+        datetime: lambda d: d.timestamp(),
     }
 
     @staticmethod
-    def timestamp_rounded(d: dt.datetime | None) -> int | None:
-        if d is None:
+    def from_timestamp(timestamp: datetime | int) -> datetime:
+        if isinstance(timestamp, datetime):
+            return timestamp
+        return datetime.fromtimestamp(timestamp, timezone.utc)
+
+    @staticmethod
+    def timestamp_rounded(dt: datetime | None) -> int | None:
+        if dt is None:
             return None
-        return int(d.timestamp())
+        return int(dt.timestamp())
