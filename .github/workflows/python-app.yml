@@ -35,17 +35,17 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
-      - name: Lint flake8
-        run: poetry run pre-commit run --hook-stage manual flake8 --all-files --show-diff-on-failure
+      - name: Check Poetry config and lockfile
+        run: poetry run pre-commit run poetry-check --all-files
 
-      - name: Check black
-        run: poetry run pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
+      - name: Lint (ruff)
+        run: poetry run ruff check . --config pyproject.toml --output-format=github --no-fix
 
-      - name: Check mypy
-        run: poetry run pre-commit run --hook-stage manual mypy --all-files
+      - name: Formatting (ruff)
+        run: poetry run pre-commit run ruff-format --all-files --show-diff-on-failure
 
-      - name: Check syntax update
-        run: poetry run pre-commit run --hook-stage manual pyupgrade --all-files
+      - name: Typing (pyright)
+        run: poetry run pre-commit run pyright --all-files
 
-      - name: Test pytest
-        run: poetry run pytest
+      - name: Test
+        run: poetry run pytest tests
