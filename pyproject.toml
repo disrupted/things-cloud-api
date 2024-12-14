@@ -12,6 +12,7 @@ httpx = "^0.23.3"
 structlog = "^24.1.0"
 attrs = "^23.2.0"
 cattrs = "^23.1.2"
+pydantic = { extras = ["email"], version = "^2.10.3" }
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.4.4"
