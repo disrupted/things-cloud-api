@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import base64
 import json
-from urllib.parse import quote
-
 from dataclasses import dataclass
 from enum import StrEnum
+from urllib.parse import quote
+
 import httpx
 import pydantic
 

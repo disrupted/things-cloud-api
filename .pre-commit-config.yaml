@@ -1,33 +1,47 @@
 ---
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+  - repo: local
     hooks:
-      - id: debug-statements
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.1
-    hooks:
-      - id: pyupgrade
-        stages: [manual]
-        args: ["--py310-plus"]
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: ["--settings", "setup.cfg"]
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
-    hooks:
-      - id: black
-        language_version: python3
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
-    hooks:
-      - id: mypy
-        args: ["--pretty"]
-        additional_dependencies: [types-python-dateutil, types-freezegun]
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        args: ["--config", "setup.cfg"]
+      - id: poetry-install
+        name: poetry-install
+        description: install Poetry dependencies from the lock file
+        entry: poetry install
+        language: python
+        pass_filenames: false
+        stages: [post-checkout, post-merge]
+        always_run: true
+      - id: poetry-check
+        name: poetry-check
+        description: validate Poetry config and dependency lock file
+        entry: poetry check
+        language: python
+        pass_filenames: false
+        files: ^(.*/)?(pyproject\.toml|poetry\.lock)$
+      - id: ruff-lint
+        name: ruff-lint
+        entry: poetry run ruff check
+        args:
+          [
+            --force-exclude,
+            --config,
+            pyproject.toml,
+            --fix,
+            --show-fixes,
+            --exit-non-zero-on-fix,
+          ]
+        language: system
+        types_or: [python]
+        require_serial: true # run once for all files
+      - id: ruff-format
+        name: ruff-format
+        entry: poetry run ruff format
+        args: [--force-exclude, --config, pyproject.toml]
+        language: system
+        types_or: [python]
+        require_serial: true # run once for all files
+      - id: pyright
+        name: pyright
+        entry: poetry run pyright
+        language: system
+        types: [python]
+        require_serial: true # run once for all files

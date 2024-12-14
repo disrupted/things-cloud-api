@@ -1,14 +1,18 @@
-from typing import Any
-
 import httpx
 from httpx import Request, RequestError, Response
 from structlog import get_logger
 
 from things_cloud.api.account import Account
 from things_cloud.api.const import API_BASE, HEADERS
-from things_cloud.api.exceptions import ThingsCloudException, ThingsUpdateException
-from things_cloud.models.serde import JsonSerde
-from things_cloud.models.todo import TodoItem, deserialize, serialize_dict
+from things_cloud.api.exceptions import ThingsCloudException
+from things_cloud.models.todo import (
+    CommitResponse,
+    HistoryResponse,
+    NewBody,
+    TodoItem,
+    Update,
+    UpdateType,
+)
 from things_cloud.utils import Util
 
 log = get_logger()
@@ -51,20 +55,20 @@ class ThingsClient:
         response.read()  # access response body
         log.debug("Body", content=response.content)
 
-    # @property
-    # def offset(self) -> int:
-    #     return self._offset
+    def update(self) -> None:
+        data = self.__fetch(self._offset)
+        self._process_updates(data)
+        self._offset = data.current_item_index
 
-    # def update(self) -> None:
-    #     self._offset = self.__fetch(self._offset)
-
-    def create(self, item: TodoItem) -> None:
-        # self.update()
-        item._index = self._offset + 1
-        self.__create_todo(self._offset, item)
-
-    def edit(self, item: TodoItem) -> None:
-        self.__modify_todo(self._offset, item)
+    def commit(self, item: TodoItem) -> None:
+        update = item.to_update()
+        try:
+            commit = self.__commit(update)
+            item._commit(update.body.payload)
+            self._offset = commit.server_head_index
+        except ThingsCloudException as e:
+            log.error("Error commiting")
+            raise e
 
     def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
@@ -72,7 +76,7 @@ class ThingsClient:
         except RequestError as e:
             raise ThingsCloudException from e
 
-    def __fetch(self, index: int) -> int:
+    def __fetch(self, index: int) -> HistoryResponse:
         response = self.__request(
             "GET",
             "/items",
@@ -81,36 +85,29 @@ class ThingsClient:
             },
         )
         if response.status_code == 200:
-            data = response.json()
-            self._process_updates(data)
-            return data["current-item-index"]
+            return HistoryResponse.model_validate_json(response.read())
         else:
             log.error("Error getting current index", response=response)
             raise ThingsCloudException
 
-    def _process_updates(self, data: dict) -> None:
-        if not data["items"]:
-            return
-
-        updates: list[dict[str, dict]] = data["items"]
-        for update in updates:
-            for uuid, body in update.items():  # actually just one item
-                log.debug("found update", uuid=uuid, body=body)
-                item: dict[str, Any] = body["p"]
-                todo = deserialize(item)
-                todo._uuid = uuid
-                if body["t"] == 0:  # new todo
-                    self._items[uuid] = todo
-                elif body["t"] == 1:  # edited todo
-                    self._apply_edits(todo, set(item.keys()))
-                else:
-                    raise ThingsUpdateException
-
-    def _apply_edits(self, update: TodoItem, keys: set[str]) -> None:
-        try:
-            self._items[update.uuid].update(update, keys)
-        except KeyError:
-            log.error(f"todo {update.uuid} not found")
+    def _process_updates(self, history: HistoryResponse) -> None:
+        for update in history.updates:
+            log.debug("processing update", update=update)
+            match update.body.type:
+                case UpdateType.NEW:
+                    assert isinstance(
+                        update.body, NewBody
+                    )  # HACK: type narrowing does not work
+                    item = update.body.payload.to_todo()
+                    item._uuid = update.id
+                    self._items[item.uuid] = item
+                case UpdateType.EDIT:
+                    try:
+                        item = self._items[update.id]
+                    except KeyError as key_err:
+                        msg = f"todo {id} not found"
+                        raise ValueError(msg) from key_err
+                    update.body.payload.apply_edits(item)
 
     # HACK: temporary
     def today(self) -> list[TodoItem]:
@@ -120,11 +117,10 @@ class ThingsClient:
             if item.scheduled_date == Util.today()
         ]
 
-    def __commit(
-        self,
-        index: int,
-        data: dict | None = None,
-    ) -> int:
+    def __commit(self, update: Update) -> CommitResponse:
+        index = self._offset
+        if update.body.type is UpdateType.NEW:
+            index += 1
         response = self.__request(
             method="POST",
             endpoint="/commit",
@@ -132,32 +128,6 @@ class ThingsClient:
                 "ancestor-index": str(index),
                 "_cnt": "1",
             },
-            content=JsonSerde.dumps(data),
+            content=update.to_api_payload(),
         )
-        return response.json()["server-head-index"]
-
-    def __create_todo(self, index: int, item: TodoItem) -> None:
-        data = {item.uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
-        log.debug("", data=data)
-
-        try:
-            self._offset = self.__commit(index, data)
-            item.reset_changes()
-        except ThingsCloudException as e:
-            log.error("Error creating todo")
-            raise e
-
-    def __modify_todo(self, index: int, item: TodoItem) -> None:
-        changes = item.changes
-        if not changes:
-            log.warning("there are no changes to be sent")
-            return
-        data = {item.uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, changes)}}
-        log.debug("", data=data)
-
-        try:
-            self._offset = self.__commit(index, data)
-            item.reset_changes()
-        except ThingsCloudException as e:
-            log.error("Error modifying todo")
-            raise e
+        return CommitResponse.model_validate_json(response.read())
