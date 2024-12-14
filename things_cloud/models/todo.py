@@ -38,7 +38,7 @@ class Status(int, Enum):
 
 @define
 class Note:
-    _t: str = field(init=False, default="tx")
+    _t: str = field(alias="_t", default="tx")
     ch: int = 0
     v: str = ""  # value
     t: int = 0
@@ -320,7 +320,7 @@ todo_st_hook = make_dict_structure_fn(
     _today_index_reference_date=override(rename="tir"),
     _completion_date=override(rename="sp"),
     _due_date=override(rename="dd"),
-    _in_trash=override(rename="tr"),
+    _trashed=override(rename="tr"),
     _instance_creation_paused=override(rename="icp"),
     _projects=override(rename="pr"),
     _areas=override(rename="ar"),
