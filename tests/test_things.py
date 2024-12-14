@@ -24,7 +24,7 @@ def test_create():
     start_idx = things.offset
     assert start_idx == OFFSET
     item = TodoItem(title="test_create")
-    new_idx = things.create(item)
+    new_idx = things.commit(item)
     assert new_idx is not None
     assert new_idx == start_idx + 1
 

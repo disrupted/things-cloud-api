@@ -15,7 +15,7 @@ OFFSET = int(os.environ.get("THINGS_OFFSET", 0))
 def main():
     things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
 
-    # create a project
+    # create a new project
     project = TodoItem(title="Things Cloud Project").as_project()
     things.commit(project)
     log.debug("created project", uuid=project.uuid)

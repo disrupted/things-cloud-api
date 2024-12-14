@@ -25,20 +25,22 @@ OFFSET = 1234
 OFFSET = None
 
 things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
-# create a project
-project = TodoItem("Things Cloud Project").as_project()
+# create a new project
+project = TodoItem(title="Things Cloud Project").as_project()
 # push to Things Cloud
-things.create(project)
+things.commit(project)
 
 # create a todo inside project
-todo = TodoItem("Try out Things Cloud")
+todo = TodoItem(title="Try out Things Cloud")
 todo.project = project
-things.create(todo)
+things.commit(todo)
 
 # schedule for today
 todo.today()
-things.edit(todo)
+things.commit(todo)
 ```
+
+See [main.py](main.py).
 
 ### Progress
 
