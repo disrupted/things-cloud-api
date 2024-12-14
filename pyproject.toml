@@ -5,7 +5,7 @@ description = "Client for Things Cloud API"
 authors = ["disrupted <hi@salomonpopp.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 orjson = "^3.9.10"
 shortuuid = "^1.0.11"
 httpx = "^0.23.3"
