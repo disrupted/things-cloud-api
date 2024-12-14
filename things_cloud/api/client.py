@@ -1,13 +1,16 @@
-from typing import Any
-
 import httpx
 from httpx import Request, RequestError, Response
 from structlog import get_logger
 
 from things_cloud.api.const import API_BASE, HEADERS
-from things_cloud.api.exceptions import ThingsCloudException, ThingsUpdateException
+from things_cloud.api.exceptions import ThingsCloudException
 from things_cloud.models.serde import JsonSerde
-from things_cloud.models.todo import TodoItem
+from things_cloud.models.todo import (
+    HistoryResponse,
+    NewBody,
+    TodoItem,
+    UpdateType,
+)
 from things_cloud.utils import Util
 
 log = get_logger()
@@ -56,11 +59,13 @@ class ThingsClient:
         return self._offset
 
     def update(self) -> None:
-        self._offset = self.__fetch(self._offset)
+        data = self.__fetch(self._offset)
+        self._process_updates(data)
+        self._offset = data.current_item_index
 
     def create(self, item: TodoItem) -> None:
         self.update()
-        item._index = self._offset + 1
+        item.index = self._offset + 1
         self.__create_todo(self._offset, item)
 
     def edit(self, item: TodoItem) -> None:
@@ -72,7 +77,7 @@ class ThingsClient:
         except RequestError as e:
             raise ThingsCloudException from e
 
-    def __fetch(self, index: int) -> int:
+    def __fetch(self, index: int) -> HistoryResponse:
         response = self.__request(
             "GET",
             "/items",
@@ -81,36 +86,29 @@ class ThingsClient:
             },
         )
         if response.status_code == 200:
-            data = response.json()
-            self._process_updates(data)
-            return data["current-item-index"]
+            return HistoryResponse.model_validate_json(response.read())
         else:
             log.error("Error getting current index", response=response)
             raise ThingsCloudException
 
-    def _process_updates(self, data: dict) -> None:
-        if not data["items"]:
-            return
-
-        updates: list[dict[str, dict]] = data["items"]
-        for update in updates:
-            for uuid, body in update.items():  # actually just one item
-                log.debug("found update", uuid=uuid, body=body)
-                item: dict[str, Any] = body["p"]
-                todo = deserialize(item)
-                todo._uuid = uuid
-                if body["t"] == 0:  # new todo
-                    self._items[uuid] = todo
-                elif body["t"] == 1:  # edited todo
-                    self._apply_edits(todo, set(item.keys()))
-                else:
-                    raise ThingsUpdateException
-
-    def _apply_edits(self, update: TodoItem, keys: set[str]) -> None:
-        try:
-            self._items[update.uuid].update(update, keys)
-        except KeyError:
-            log.error(f"todo {update.uuid} not found")
+    def _process_updates(self, history: HistoryResponse) -> None:
+        for update in history.updates:
+            log.debug("processing update", update=update)
+            match update.body.type:
+                case UpdateType.NEW:
+                    assert isinstance(
+                        update.body, NewBody
+                    )  # HACK: type narrowing does not work
+                    item = update.body.payload.to_todo()
+                    item._uuid = update.id
+                    self._items[item.uuid] = item
+                case UpdateType.EDIT:
+                    try:
+                        item = self._items[update.id]
+                    except KeyError as key_err:
+                        msg = f"todo {id} not found"
+                        raise ValueError(msg) from key_err
+                    update.body.payload.apply_edits(item)
 
     # HACK: temporary
     def today(self) -> list[TodoItem]:

@@ -1,15 +1,89 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime, time
-from enum import IntEnum
-from typing import Annotated, Any
+from enum import IntEnum, StrEnum
+from typing import Annotated, Any, Literal
 
 import pydantic
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
 
-SERDE = TodoSerde()
+ShortUUID = Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)]
+
+
+class HistoryResponse(pydantic.BaseModel):
+    current_item_index: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="current-item-index")
+    ]
+    end_total_content_size: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="end-total-content-size")
+    ]
+    latest_total_content_size: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="latest-total-content-size")
+    ]
+    schema_: Annotated[pydantic.PositiveInt, pydantic.Field(alias="schema")]  # 301
+    start_total_content_size: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="start-total-content-size")
+    ]
+    items: Annotated[list[dict[str, Body]], pydantic.Field(min_length=1)]
+
+    @property
+    def updates(self) -> Iterator[Update]:
+        for item in self.items:
+            assert (
+                isinstance(item, dict) and len(item) == 1
+            ), "Expected items dict with one key-value pair"
+            key, value = next(iter(item.items()))
+            yield Update(id=key, body=value)
+
+    # @pydantic.model_validator(mode="before")
+    # def flatten_items(cls, values: dict[str, Any]) -> dict[str, Any]:
+    #     items = values.get("items")
+    #     assert (
+    #         isinstance(items, dict) and len(items) == 1
+    #     ), "malformed API response, expected items dict with one key-value pair"
+
+    #     key, value = next(iter(items.items()))
+    #     values["items"] = Update(id=key, payload=value)
+    #     return values
+
+
+class Update(pydantic.BaseModel):
+    id: ShortUUID
+    body: Body = pydantic.Field(discriminator="type")
+
+    # @pydantic.model_validator(mode="after")
+    # def inject_task_id(self) -> Self:
+    #     self.body.payload._uuid = self.id
+    #     return self
+
+
+class UpdateType(IntEnum):
+    NEW = 0
+    EDIT = 1
+
+
+class EntityType(StrEnum):
+    TASK_6 = "Task6"
+
+
+class NewBody(pydantic.BaseModel):
+    type: Annotated[Literal[UpdateType.NEW], pydantic.Field(alias="t")] = UpdateType.NEW
+    payload: Annotated[TodoApiObject, pydantic.Field(alias="p")]
+    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+
+
+class EditBody(pydantic.BaseModel):
+    type: Annotated[Literal[UpdateType.EDIT], pydantic.Field(alias="t")] = (
+        UpdateType.EDIT
+    )
+    payload: Annotated[TodoDeltaApiObject, pydantic.Field(alias="p")]
+    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+
+
+Body = Annotated[NewBody | EditBody, pydantic.Field(discriminator="type")]
 
 
 class Type(IntEnum):
@@ -38,7 +112,6 @@ class Note(pydantic.BaseModel):
     t: int = 0
 
 
-ShortUUID = Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)]
 Timestamp = Annotated[
     datetime,
     pydantic.PlainValidator(
@@ -52,7 +125,6 @@ BoolBit = Annotated[bool, pydantic.PlainSerializer(int)]
 class TodoApiObject(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(populate_by_name=True)
 
-    _uuid: ShortUUID | None = pydantic.PrivateAttr(default=None)
     index: Annotated[int, pydantic.Field(alias="ix")]
     title: Annotated[str, pydantic.Field(alias="tt")]
     status: Annotated[Status, pydantic.Field(alias="ss")]
@@ -137,12 +209,70 @@ class TodoApiObject(pydantic.BaseModel):
         return todo
 
 
+class TodoDeltaApiObject(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(populate_by_name=True)
+
+    index: Annotated[int | None, pydantic.Field(alias="ix")] = None
+    title: Annotated[str | None, pydantic.Field(alias="tt")] = None
+    status: Annotated[Status | None, pydantic.Field(alias="ss")] = None
+    destination: Annotated[Destination | None, pydantic.Field(alias="st")] = None
+    creation_date: Annotated[Timestamp | None, pydantic.Field(alias="cd")] = None
+    modification_date: Annotated[Timestamp | None, pydantic.Field(alias="md")] = None
+    scheduled_date: Annotated[Timestamp | None, pydantic.Field(alias="sr")] = None
+    today_index_reference_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="tir")
+    ] = None
+    completion_date: Annotated[Timestamp | None, pydantic.Field(alias="sp")] = None
+    due_date: Annotated[Timestamp | None, pydantic.Field(alias="dd")] = None
+    trashed: Annotated[bool | None, pydantic.Field(alias="tr")] = None
+    instance_creation_paused: Annotated[bool | None, pydantic.Field(alias="icp")] = None
+    projects: Annotated[list[str] | None, pydantic.Field(alias="pr")] = None
+    areas: Annotated[list[str] | None, pydantic.Field(alias="ar")] = None
+    evening: Annotated[BoolBit | None, pydantic.Field(alias="sb")] = None
+    tags: Annotated[list[Any] | None, pydantic.Field(alias="tg")] = None
+    type: Annotated[Type | None, pydantic.Field(alias="tp")] = None
+    due_date_suppression_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="dds")
+    ] = None
+    repeating_template: Annotated[list[str] | None, pydantic.Field(alias="rt")] = None
+    repeater_migration_date: Annotated[Any | None, pydantic.Field(alias="rmd")] = None
+    delegate: Annotated[list[Any] | None, pydantic.Field(alias="dl")] = None
+    due_date_offset: Annotated[int | None, pydantic.Field(alias="do")] = None
+    last_alarm_interaction_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="lai")
+    ] = None
+    action_group: Annotated[list[str] | None, pydantic.Field(alias="agr")] = None
+    leaves_tombstone: Annotated[bool | None, pydantic.Field(alias="lt")] = None
+    instance_creation_count: Annotated[int | None, pydantic.Field(alias="icc")] = None
+    today_index: Annotated[int | None, pydantic.Field(alias="ti")] = None
+    reminder: Annotated[time | None, pydantic.Field(alias="ato")] = None
+    instance_creation_start_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="icsd")
+    ] = None
+    repeater: Annotated[Any | None, pydantic.Field(alias="rp")] = None
+    after_completion_reference_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="acrd")
+    ] = None
+    recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")] = None
+    note: Annotated[Note | None, pydantic.Field(alias="nt")] = None
+
+    def apply_edits(self, todo: TodoItem) -> None:
+        keys = self.model_dump(by_alias=False, exclude_none=True).keys()
+        if not keys:
+            raise RuntimeError("there are no edits to apply")
+        for key in keys:
+            old_value = getattr(todo, key)
+            new_value = getattr(self, key)
+            if old_value == new_value:
+                msg = f"old and new value are identical: {new_value}"
+                raise ValueError(msg)
+            setattr(todo, key, new_value)
+
+
 class TodoItem(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(validate_assignment=True)
 
-    _uuid: Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)] = (
-        pydantic.PrivateAttr(default_factory=Util.uuid)
-    )
+    _uuid: ShortUUID = pydantic.PrivateAttr(default_factory=Util.uuid)
     index: int = pydantic.Field(default=0)
     title: str
     _status: Status = pydantic.PrivateAttr(default=Status.TODO)
@@ -218,7 +348,7 @@ class TodoItem(pydantic.BaseModel):
         )
 
     @property
-    def uuid(self) -> str:
+    def uuid(self) -> ShortUUID:
         return self._uuid
 
     @pydantic.computed_field
@@ -352,8 +482,3 @@ class TodoItem(pydantic.BaseModel):
         today = Util.today()
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
-
-    # def update(self, update: TodoItem, keys: set[str]) -> None:
-    #     for key in translate_keys_deserialize(keys):
-    #         val = getattr(update, key)
-    #         setattr(self, key, val)

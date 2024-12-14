@@ -1,9 +1,18 @@
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
 
-from things_cloud.api.client import ThingsClient
-from things_cloud.models.todo import Destination, Note, Status, TodoItem, Type
+from things_cloud.api.client import HistoryResponse, ThingsClient
+from things_cloud.models.todo import (
+    Destination,
+    EditBody,
+    NewBody,
+    Note,
+    Status,
+    TodoItem,
+    Type,
+)
 
 ACCOUNT = ""  # TODO
 OFFSET = 123
@@ -20,9 +29,9 @@ def test_create():
     assert new_idx == start_idx + 1
 
 
-def test_process_new():
-    things._items.clear()
-    data = {
+@pytest.fixture()
+def history_data_new() -> dict[str, Any]:
+    return {
         "items": [
             {
                 "aBCDiHyah4Uf0MQqp11jsX": {
@@ -68,12 +77,28 @@ def test_process_new():
         ],
         "current-item-index": 1234,
         "schema": 301,
-        "start-total-content-size": 0,
+        "start-total-content-size": 1,  # fake
         "end-total-content-size": 1234567,
         "latest-total-content-size": 1234567,
     }
 
-    things._process_updates(data)
+
+@pytest.fixture()
+def history_new(history_data_new: dict[str, Any]) -> HistoryResponse:
+    return HistoryResponse.model_validate(history_data_new)
+
+
+def test_deserialize_history_new(history_new: HistoryResponse):
+    assert len(history_new.items) == 1
+    updates = list(history_new.updates)
+    assert len(updates) == 1
+    assert all(isinstance(update.body, NewBody) for update in updates)
+
+
+def test_process_new(history_new: HistoryResponse):
+    things._items.clear()
+
+    things._process_updates(history_new)
     todos = list(things._items.values())
     assert len(todos) == 1
     time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
@@ -116,16 +141,12 @@ def test_process_new():
     # assert not todo._changes
 
 
-def test_process_updated():
-    things._items.clear()
-    UUID = "aBCDiHyah4Uf0MQqp11jsX"
-    todo = TodoItem(title="test original")
-    todo._uuid = UUID
-    things._items = {UUID: todo}
-    data = {
+@pytest.fixture()
+def history_data_edit() -> dict[str, Any]:
+    return {
         "items": [
             {
-                UUID: {
+                "aBCDiHyah4Uf0MQqp11jsX": {
                     "p": {"md": 1641234567.123456, "tt": "test updated"},
                     "e": "Task6",
                     "t": 1,
@@ -134,41 +155,58 @@ def test_process_updated():
         ],
         "current-item-index": 1234,
         "schema": 301,
-        "start-total-content-size": 0,
+        "start-total-content-size": 1,
         "end-total-content-size": 1234567,
         "latest-total-content-size": 1234567,
     }
 
-    things._process_updates(data)
-    todos = things._items
-    assert len(todos) == 1
-    todo = todos[UUID]
-    assert todo.uuid == UUID
-    assert todo.title == "test updated"
-    assert todo.modification_date == datetime(
+
+@pytest.fixture()
+def history_edit(history_data_edit: dict[str, Any]) -> HistoryResponse:
+    return HistoryResponse.model_validate(history_data_edit)
+
+
+def test_deserialize_history_edit(history_edit: HistoryResponse):
+    assert len(history_edit.items) == 1
+    updates = list(history_edit.updates)
+    assert len(updates) == 1
+    assert all(isinstance(update.body, EditBody) for update in updates)
+
+
+def test_process_updated(history_edit: HistoryResponse):
+    things._items.clear()
+    update = next(history_edit.updates)
+
+    todo = TodoItem(title="test original")
+    todo._uuid = update.id
+    things._items[update.id] = todo
+
+    things._process_updates(history_edit)
+    assert len(things._items) == 1
+    updated_todo = things._items[todo.uuid]
+    assert updated_todo.uuid == todo.uuid
+    assert updated_todo.title == "test updated"
+    assert updated_todo.modification_date == datetime(
         2022, 1, 3, 18, 29, 27, 123456, tzinfo=timezone.utc
     )
     # assert not todo._changes
 
 
-def test_process_multiple():
-    things._items.clear()
-    UUID1 = "aBCDiHyah4Uf0MQqp11js1"
-    UUID2 = "aBCDiHyah4Uf0MQqp11js2"
-    UUID3 = "aBCDiHyah4Uf0MQqp11js3"
-    data = {
+@pytest.fixture()
+def history_data_mixed() -> dict[str, Any]:
+    return {
         "items": [
             # updated non-existant todo
-            {
-                UUID1: {
-                    "p": {"md": 1641234567.123456, "tt": "test updated"},
-                    "e": "Task6",
-                    "t": 1,
-                }
-            },
+            # {
+            #     "aBCDiHyah4Uf0MQqp11js1": {
+            #         "p": {"md": 1641234567.123456, "tt": "test updated"},
+            #         "e": "Task6",
+            #         "t": 1,
+            #     }
+            # },
             # new todo
             {
-                UUID2: {
+                "aBCDiHyah4Uf0MQqp11js2": {
                     "p": {
                         "ix": 2,
                         "cd": 1641234567,
@@ -210,7 +248,7 @@ def test_process_multiple():
             },
             # new todo
             {
-                UUID3: {
+                "aBCDiHyah4Uf0MQqp11js3": {
                     "p": {
                         "ix": 3,
                         "cd": 1641234567,
@@ -253,13 +291,25 @@ def test_process_multiple():
         ],
         "current-item-index": 1234,
         "schema": 301,
-        "start-total-content-size": 0,
+        "start-total-content-size": 1,
         "end-total-content-size": 1234567,
         "latest-total-content-size": 1234567,
     }
 
-    things._process_updates(data)
+
+@pytest.fixture()
+def history_mixed(history_data_mixed: dict[str, Any]) -> HistoryResponse:
+    return HistoryResponse.model_validate(history_data_mixed)
+
+
+def test_process_multiple(history_mixed: HistoryResponse):
+    things._items.clear()
+
+    things._process_updates(history_mixed)
     todos = things._items
+    UUID2 = "aBCDiHyah4Uf0MQqp11js2"
+    UUID3 = "aBCDiHyah4Uf0MQqp11js3"
+
     assert len(todos) == 2
     todo2 = todos[UUID2]
     assert todo2.uuid == UUID2
