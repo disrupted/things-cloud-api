@@ -1,0 +1,19 @@
+name: Lint GitHub CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/**
+      - actions/**
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Lint actions and workflows
+        uses: bakdata/ci-templates/actions/action-lint@1.46.3
+        with:
+          action-lint-version: "v1.6.27"
