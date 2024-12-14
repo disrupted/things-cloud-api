@@ -16,13 +16,13 @@ def main():
     things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
 
     # create a project
-    project = TodoItem("Things Cloud Project").as_project()
+    project = TodoItem(title="Things Cloud Project").as_project()
     things.create(project)
     log.debug("created project", uuid=project.uuid)
 
     sleep(10)
     # create a todo inside project
-    todo = TodoItem("Try out Things Cloud")
+    todo = TodoItem(title="Try out Things Cloud")
     todo.project = project
     things.create(todo)
 
