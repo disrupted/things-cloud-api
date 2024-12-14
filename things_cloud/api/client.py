@@ -6,7 +6,6 @@ from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
 from things_cloud.models.todo import (
     CommitResponse,
-    EditBody,
     HistoryResponse,
     NewBody,
     TodoItem,
@@ -65,13 +64,15 @@ class ThingsClient:
         self._process_updates(data)
         self._offset = data.current_item_index
 
-    def create(self, item: TodoItem) -> None:
-        self.update()
-        item.index = self._offset + 1
-        self.__create_todo(self._offset, item)
-
-    def edit(self, item: TodoItem) -> None:
-        self.__modify_todo(self._offset, item)
+    def commit(self, item: TodoItem) -> None:
+        update = item.to_update()
+        try:
+            commit = self.__commit(update)
+            item._commit(update.body.payload)
+            self._offset = commit.server_head_index
+        except ThingsCloudException as e:
+            log.error("Error commiting")
+            raise e
 
     def __request(self, method: str, endpoint: str, **kwargs) -> Response:
         try:
@@ -120,11 +121,10 @@ class ThingsClient:
             if item.scheduled_date == Util.today()
         ]
 
-    def __commit(
-        self,
-        index: int,
-        update: Update,
-    ) -> CommitResponse:
+    def __commit(self, update: Update) -> CommitResponse:
+        index = self._offset
+        if update.body.type is UpdateType.NEW:
+            index += 1
         response = self.__request(
             method="POST",
             endpoint="/commit",
@@ -135,29 +135,3 @@ class ThingsClient:
             content=update.to_api_payload(),
         )
         return CommitResponse.model_validate_json(response.read())
-
-    def __create_todo(self, index: int, item: TodoItem) -> None:
-        complete = item.to_new()
-        body = NewBody(payload=complete)
-        update = Update(id=item.uuid, body=body)
-
-        try:
-            commit = self.__commit(index, update)
-            self._offset = commit.server_head_index
-            item._commit(complete)
-        except ThingsCloudException as e:
-            log.error("Error creating todo")
-            raise e
-
-    def __modify_todo(self, index: int, item: TodoItem) -> None:
-        delta = item.to_edit()
-        body = EditBody(payload=delta)
-        update = Update(id=item.uuid, body=body)
-
-        try:
-            commit = self.__commit(index, update)
-            self._offset = commit.server_head_index
-            item._commit(delta)
-        except ThingsCloudException as e:
-            log.error("Error modifying todo")
-            raise e

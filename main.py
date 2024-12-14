@@ -17,19 +17,19 @@ def main():
 
     # create a project
     project = TodoItem(title="Things Cloud Project").as_project()
-    things.create(project)
+    things.commit(project)
     log.debug("created project", uuid=project.uuid)
 
     sleep(10)
     # create a todo inside project
     todo = TodoItem(title="Try out Things Cloud")
     todo.project = project
-    things.create(todo)
+    things.commit(todo)
 
     sleep(10)
     # schedule for today
     todo.today()
-    things.edit(todo)
+    things.commit(todo)
 
 
 if __name__ == "__main__":

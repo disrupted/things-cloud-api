@@ -441,7 +441,7 @@ def test_todo_from_api_object():
 
 def test_to_new(task: TodoItem):
     assert task._api_object is None
-    new = task.to_new()
+    new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
     assert task._api_object
@@ -450,52 +450,52 @@ def test_to_new(task: TodoItem):
 
 def test_to_new_exists(task: TodoItem):
     assert task._api_object is None
-    new = task.to_new()
+    new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
 
     with pytest.raises(
         ValueError, match="^current version exists for todo, use to_edit instead$"
     ):
-        task.to_new()
+        task._to_new()
 
 
 def test_to_edit_does_not_exist(task: TodoItem):
     with pytest.raises(
         ValueError, match="^no current version exists for todo, use to_new instead$"
     ):
-        task.to_edit()
+        task._to_edit()
 
 
 def test_to_edit_unchanged(task: TodoItem):
     assert task._api_object is None
-    new = task.to_new()
+    new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
 
     with pytest.raises(ValueError, match="^no changes found$"):
-        task.to_edit()
+        task._to_edit()
 
 
 def test_to_edit(task: TodoItem):
     assert task._api_object is None
-    new = task.to_new()
+    new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
 
     task.title = "updated task"
-    delta = task.to_edit()
+    delta = task._to_edit()
     assert delta
     assert delta.model_dump(exclude_none=True) == {"title": "updated task"}
 
 
 def test_to_edit_detect_reverts(task: TodoItem):
     assert task._api_object is None
-    new = task.to_new()
+    new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
 
     task.title = "updated task"  # first we change something
     task.title = "test task"  # but then we revert to the old value
     with pytest.raises(ValueError, match="no changes found"):
-        task.to_edit()
+        task._to_edit()

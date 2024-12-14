@@ -314,10 +314,21 @@ class TodoItem(pydantic.BaseModel):
     note: Note = pydantic.Field(default_factory=Note)
     _api_object: TodoApiObject | None = pydantic.PrivateAttr(default=None)
 
-    def to_new(self) -> TodoApiObject:
+    def to_update(self) -> Update:
+        if not self._api_object:
+            complete = self._to_new()
+            body = NewBody(payload=complete)
+            update = Update(id=self.uuid, body=body)
+        else:
+            delta = self._to_edit()
+            body = EditBody(payload=delta)
+            update = Update(id=self.uuid, body=body)
+        return update
+
+    def _to_new(self) -> TodoApiObject:
         if self._api_object:
             msg = (
-                f"current version exists for todo, use {self.to_edit.__name__} instead"
+                f"current version exists for todo, use {self._to_edit.__name__} instead"
             )
             raise ValueError(msg)
 
@@ -357,9 +368,9 @@ class TodoItem(pydantic.BaseModel):
             note=self.note,
         )
 
-    def to_edit(self) -> TodoDeltaApiObject:
+    def _to_edit(self) -> TodoDeltaApiObject:
         if not self._api_object:
-            msg = f"no current version exists for todo, use {self.to_new.__name__} instead"
+            msg = f"no current version exists for todo, use {self._to_new.__name__} instead"
             raise ValueError(msg)
 
         keys = self.model_dump(by_alias=False).keys()
