@@ -4,7 +4,7 @@ from collections import deque
 from collections.abc import Callable
 from datetime import datetime, time, timezone
 from enum import Enum
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, Concatenate, ParamSpec, TypeVar
 
 import cattrs
 from attrs import define, field
@@ -48,8 +48,14 @@ P = ParamSpec("P")
 _R = TypeVar("_R")
 
 
-def mod(*field_names: str):
-    def decorate(func: Callable[..., _R]):
+def mod(
+    *field_names: str,
+) -> Callable[
+    [Callable[Concatenate[TodoItem, P], _R]], Callable[Concatenate[TodoItem, P], _R]
+]:
+    def decorate(
+        func: Callable[Concatenate[TodoItem, P], _R],
+    ) -> Callable[Concatenate[TodoItem, P], _R]:
         def wrapper(self: TodoItem, *args: P.args, **kwargs: P.kwargs) -> _R:
             # first we call the wrapped function,
             # in case it throws an exception we don't want to modify
