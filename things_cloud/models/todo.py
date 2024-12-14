@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import Callable
-from datetime import datetime, time, timezone
+from datetime import datetime, time
 from enum import IntEnum
-from typing import Any, Concatenate, ParamSpec, TypeVar
+from typing import Annotated, Any, Concatenate, ParamSpec, TypeVar
 
-import cattrs
-from attrs import define, field
-from cattr.gen import make_dict_structure_fn
-from cattrs.gen import make_dict_unstructure_fn, override
+import pydantic
 
 from things_cloud.models.serde import TodoSerde
 from things_cloud.utils import Util
@@ -36,9 +33,8 @@ class Status(IntEnum):
     COMPLETE = 3
 
 
-@define
-class Note:
-    _t: str = field(alias="_t", default="tx")
+class Note(pydantic.BaseModel):
+    t_: str = pydantic.Field(alias="_t", default="tx")
     ch: int = 0
     v: str = ""  # value
     t: int = 0
@@ -70,51 +66,95 @@ def mod(
     return decorate
 
 
-@define
-class TodoItem:
-    _uuid: str = field(factory=Util.uuid, init=False)
-    _index: int = field(default=0, kw_only=True)
-    _title: str = field(default="")
-    _status: Status = field(default=Status.TODO, kw_only=True)
-    _destination: Destination = field(default=Destination.INBOX, kw_only=True)
-    _creation_date: datetime | None = field(factory=Util.now, kw_only=True)
-    _modification_date: datetime | None = field(factory=Util.now, kw_only=True)
-    _scheduled_date: datetime | None = field(default=None, kw_only=True)
-    _today_index_reference_date: datetime | None = field(default=None, kw_only=True)
-    _completion_date: datetime | None = field(default=None, kw_only=True)
-    _due_date: datetime | None = field(default=None, kw_only=True)
-    _trashed: bool = field(default=False, kw_only=True)
-    _instance_creation_paused: bool = field(default=False, kw_only=True)
-    _projects: list[str] = field(factory=list, kw_only=True)
-    _areas: list[str] = field(factory=list, kw_only=True)
-    _is_evening: bool = field(default=False, kw_only=True)
-    _tags: list[Any] = field(factory=list, kw_only=True)  # TODO: set data type
-    _type: Type = field(default=Type.TASK, kw_only=True)
-    _due_date_suppression_date: datetime | None = field(default=None, kw_only=True)
-    _repeating_template: list[str] = field(factory=list, kw_only=True)
-    _repeater_migration_date: Any = field(
-        default=None, kw_only=True
-    )  # TODO: date type yet to be seen
-    _delegate: list[Any] = field(
-        factory=list, kw_only=True
-    )  # TODO: date type yet to be seen
-    _due_date_offset: int = field(default=0, kw_only=True)
-    _last_alarm_interaction_date: datetime | None = field(default=None, kw_only=True)
-    _action_group: list[str] = field(factory=list, kw_only=True)
-    _leaves_tombstone: bool = field(default=False, kw_only=True)
-    _instance_creation_count: int = field(default=0, kw_only=True)
-    _today_index: int = field(default=0, kw_only=True)
-    _reminder: time | None = field(default=None, kw_only=True)
-    _instance_creation_start_date: datetime | None = field(default=None, kw_only=True)
-    _repeater: Any = field(default=None, kw_only=True)  # TODO: date type yet to be seen
-    _after_completion_reference_date: datetime | None = field(
-        default=None, kw_only=True
+class TodoItem(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(validate_assignment=True)
+
+    _uuid: Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)] = (
+        pydantic.PrivateAttr(default_factory=Util.uuid)
     )
-    _recurrence_rule: str | None = field(
-        default=None, kw_only=True
-    )  # TODO: weird XML values
-    _note: Note = field(factory=Note, kw_only=True)
-    _changes: deque[str] = field(factory=deque, init=False)
+    index: int = pydantic.Field(default=0)
+    title_: str = pydantic.Field(default="", alias="title")
+    status_: Status = pydantic.Field(default=Status.TODO, repr=False)
+    destination_: Destination = pydantic.Field(default=Destination.INBOX)
+    creation_date: datetime | None = pydantic.Field(default_factory=Util.now)
+    modification_date: datetime | None = pydantic.Field(default_factory=Util.now)
+    scheduled_date_: datetime | None = pydantic.Field(default=None)
+    today_index_reference_date_: datetime | None = pydantic.Field(
+        default=None, repr=False
+    )
+    completion_date_: datetime | None = pydantic.Field(default=None, repr=False)
+    due_date: datetime | None = pydantic.Field(default=None)
+    trashed: bool = pydantic.Field(default=False)
+    instance_creation_paused: bool = pydantic.Field(default=False)
+    projects_: list[str] = pydantic.Field(default_factory=list, repr=False)
+    areas_: list[str] = pydantic.Field(default_factory=list)
+    evening_: bool = pydantic.Field(default=False)
+    tags: list[Any] = pydantic.Field(default_factory=list)  # TODO: set data type
+    type: Type = pydantic.Field(default=Type.TASK)
+    due_date_suppression_date: datetime | None = pydantic.Field(default=None)
+    repeating_template: list[str] = pydantic.Field(default_factory=list)
+    repeater_migration_date: Any = pydantic.Field(
+        default=None
+    )  # TODO: date type yet to be seen
+    delegate: list[Any] = pydantic.Field(
+        default_factory=list
+    )  # TODO: date type yet to be seen
+    due_date_offset: int = pydantic.Field(default=0)
+    last_alarm_interaction_date: datetime | None = pydantic.Field(default=None)
+    action_group: list[str] = pydantic.Field(default_factory=list)
+    leaves_tombstone: bool = pydantic.Field(default=False)
+    instance_creation_count: int = pydantic.Field(default=0)
+    today_index: int = pydantic.Field(default=0)
+    reminder: time | None = pydantic.Field(default=None)
+    instance_creation_start_date: datetime | None = pydantic.Field(default=None)
+    repeater: Any = pydantic.Field(default=None)  # TODO: date type yet to be seen
+    after_completion_reference_date: datetime | None = pydantic.Field(default=None)
+    recurrence_rule: str | None = pydantic.Field(default=None)  # TODO: weird XML values
+    note: Note = pydantic.Field(default_factory=Note)
+    _changes: deque[str] = pydantic.PrivateAttr(default=deque(["title"]))
+
+    # @pydantic.model_serializer(mode="wrap")
+    # def serialize_model(
+    #     self,
+    #     handler: pydantic.SerializerFunctionWrapHandler,
+    #     info: pydantic.SerializationInfo,
+    # ) -> dict[str, Any]:
+    #     result = handler(self)
+    #     return {
+    #         "ix": self._index,
+    #         "_title": "tt",
+    #         "_status": "ss",
+    #         "_destination": "st",
+    #         "_creation_date": "cd",
+    #         "_modification_date": "md",
+    #         "_scheduled_date": "sr",
+    #         "_today_index_reference_date": "tir",
+    #         "_completion_date": "sp",
+    #         "_due_date": "dd",
+    #         "_trashed": "tr",
+    #         "_instance_creation_paused": "icp",
+    #         "_projects": "pr",
+    #         "_areas": "ar",
+    #         "_is_evening": "sb",
+    #         "_tags": "tg",
+    #         "_type": "tp",
+    #         "_due_date_suppression_date": "dds",
+    #         "_repeating_template": "rt",
+    #         "_repeater_migration_date": "rmd",
+    #         "_delegate": "dl",
+    #         "_due_date_offset": "do",
+    #         "_last_alarm_interaction_date": "lai",
+    #         "_action_group": "agr",
+    #         "_leaves_tombstone": "lt",
+    #         "_instance_creation_count": "icc",
+    #         "_today_index": "ti",
+    #         "_reminder": "ato",
+    #         "_instance_creation_start_date": "icsd",
+    #         "_repeater": "rp",
+    #         "_after_completion_reference_date": "acrd",
+    #         "_recurrence_rule": "rr",
+    #         "_note": "nt",
+    #     }
 
     @property
     def uuid(self) -> str:
@@ -133,38 +173,38 @@ class TodoItem:
 
     @property
     def title(self) -> str:
-        return self._title
+        return self.title_
 
     @title.setter
-    @mod("_title")
+    @mod("title")
     def title(self, title: str) -> None:
-        self._title = title
+        self.title_ = title
 
     @property
     def destination(self) -> Destination:
-        return self._destination
+        return self.destination_
 
     @destination.setter
     @mod("_destination")
     def destination(self, destination: Destination) -> None:
-        self._destination = destination
+        self.destination_ = destination
 
     @property
     def project(self) -> str | None:
-        return self._projects[0] if self._projects else None
+        return self.projects_[0] if self.projects_ else None
 
     @project.setter
-    @mod("_projects")
+    @mod("projects_")
     def project(self, project: TodoItem | str | None) -> None:
         if isinstance(project, TodoItem):
-            if project._type != Type.PROJECT:
+            if project.type != Type.PROJECT:
                 raise ValueError("argument must be a project")
-            self._projects = [project.uuid]
+            self.projects_ = [project.uuid]
         elif project:
-            self._projects = [project]
+            self.projects_ = [project]
 
         if not project:
-            self._projects.clear()
+            self.projects_.clear()
             return
 
         # clear area
@@ -176,15 +216,15 @@ class TodoItem:
 
     @property
     def area(self) -> str | None:
-        return self._areas[0] if self._areas else None
+        return self.areas_[0] if self.areas_ else None
 
     @area.setter
-    @mod("_areas")
+    @mod("areas_")
     def area(self, area: str | None) -> None:
         if not area:
-            self._areas.clear()
+            self.areas_.clear()
             return
-        self._areas = [area]
+        self.areas_ = [area]
 
         # clear project
         if self.project:
@@ -193,16 +233,17 @@ class TodoItem:
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
 
+    @pydantic.computed_field
     @property
     def status(self) -> Status:
-        return self._status
+        return self.status_
 
     @status.setter
     @mod("_status")
     def status(self, status: Status) -> None:
-        if self._status is status:
+        if self.status_ is status:
             raise ValueError(f"item already has {status.name.lower()} status")
-        self._status = status
+        self.status_ = status
         match status:
             case Status.TODO:
                 self.completion_date = None
@@ -218,17 +259,17 @@ class TodoItem:
     def cancel(self) -> None:
         self.status = Status.CANCELLED
 
-    @mod("_trashed")
+    @mod("trashed")
     def delete(self) -> None:
-        self._trashed = True
+        self.trashed = True
 
-    @mod("_trashed")
+    @mod("trashed")
     def restore(self) -> None:
-        self._trashed = False
+        self.trashed = False
 
-    @mod("_type", "_instance_creation_paused")
+    @mod("type", "_instance_creation_paused")
     def as_project(self) -> TodoItem:
-        self._type = Type.PROJECT
+        self.type = Type.PROJECT
         self._instance_creation_paused = True
         if self.destination == Destination.INBOX:
             self.destination = Destination.ANYTIME
@@ -236,22 +277,22 @@ class TodoItem:
 
     @property
     def completion_date(self) -> datetime | None:
-        return self._completion_date
+        return self.completion_date_
 
     @completion_date.setter
     @mod("_completion_date")
     def completion_date(self, completion_date: datetime | None) -> None:
-        self._completion_date = completion_date
+        self.completion_date_ = completion_date
 
     @property
     def scheduled_date(self) -> datetime | None:
-        return self._scheduled_date
+        return self.scheduled_date_
 
     @scheduled_date.setter
-    @mod("_scheduled_date", "_today_index_reference_date")
+    @mod("scheduled_date_", "today_index_reference_date_")
     def scheduled_date(self, scheduled_date: datetime | None) -> None:
-        self._scheduled_date = scheduled_date
-        self._today_index_reference_date = scheduled_date
+        self.scheduled_date_ = scheduled_date
+        self.today_index_reference_date_ = scheduled_date
 
     @property
     def due_date(self) -> datetime | None:
@@ -280,12 +321,12 @@ class TodoItem:
 
     @property
     def is_evening(self) -> bool:
-        return self.is_today and self._is_evening
+        return self.is_today and self.evening_
 
-    @mod("_is_evening")
+    @mod("evening_")
     def evening(self) -> None:
         self.today()
-        self._is_evening = True
+        self.evening_ = True
 
     @mod()
     def today(self) -> None:
@@ -293,122 +334,122 @@ class TodoItem:
         self.destination = Destination.ANYTIME
         self.scheduled_date = today
 
-    def update(self, update: TodoItem, keys: set[str]) -> None:
-        for key in translate_keys_deserialize(keys):
-            val = getattr(update, key)
-            setattr(self, key, val)
+    # def update(self, update: TodoItem, keys: set[str]) -> None:
+    #     for key in translate_keys_deserialize(keys):
+    #         val = getattr(update, key)
+    #         setattr(self, key, val)
 
 
-converter = cattrs.Converter(forbid_extra_keys=True)
-todo_unst_hook = make_dict_unstructure_fn(
-    TodoItem,
-    converter,
-    _uuid=override(omit=True),
-    _changes=override(omit=True),
-)
+# converter = cattrs.Converter(forbid_extra_keys=True)
+# todo_unst_hook = make_dict_unstructure_fn(
+#     TodoItem,
+#     converter,
+#     _uuid=override(omit=True),
+#     _changes=override(omit=True),
+# )
 
-todo_st_hook = make_dict_structure_fn(
-    TodoItem,
-    converter,
-    _index=override(rename="ix"),
-    _title=override(rename="tt"),
-    _status=override(rename="ss"),
-    _destination=override(rename="st"),
-    _creation_date=override(rename="cd"),
-    _modification_date=override(rename="md"),
-    _scheduled_date=override(rename="sr"),
-    _today_index_reference_date=override(rename="tir"),
-    _completion_date=override(rename="sp"),
-    _due_date=override(rename="dd"),
-    _trashed=override(rename="tr"),
-    _instance_creation_paused=override(rename="icp"),
-    _projects=override(rename="pr"),
-    _areas=override(rename="ar"),
-    _is_evening=override(
-        rename="sb", struct_hook=lambda value, _: bool(value), unstruct_hook=int
-    ),
-    _tags=override(rename="tg"),
-    _type=override(rename="tp"),
-    _due_date_suppression_date=override(rename="dds"),
-    _repeating_template=override(rename="rt"),
-    _repeater_migration_date=override(rename="rmd"),
-    _delegate=override(rename="dl"),
-    _due_date_offset=override(rename="do"),
-    _last_alarm_interaction_date=override(rename="lai"),
-    _action_group=override(rename="agr"),
-    _leaves_tombstone=override(rename="lt"),
-    _instance_creation_count=override(rename="icc"),
-    _today_index=override(rename="ti"),
-    _reminder=override(rename="ato"),
-    _instance_creation_start_date=override(rename="icsd"),
-    _repeater=override(rename="rp"),
-    _after_completion_reference_date=override(rename="acrd"),
-    _recurrence_rule=override(rename="rr"),
-    _note=override(rename="nt"),
-)
-
-
-converter.register_unstructure_hook(TodoItem, todo_unst_hook)
-converter.register_structure_hook(TodoItem, todo_st_hook)
-
-converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
-converter.register_structure_hook(
-    datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp, timezone.utc)
-)
-
-ALIASES_UNSTRUCT = {
-    "_index": "ix",
-    "_title": "tt",
-    "_status": "ss",
-    "_destination": "st",
-    "_creation_date": "cd",
-    "_modification_date": "md",
-    "_scheduled_date": "sr",
-    "_today_index_reference_date": "tir",
-    "_completion_date": "sp",
-    "_due_date": "dd",
-    "_trashed": "tr",
-    "_instance_creation_paused": "icp",
-    "_projects": "pr",
-    "_areas": "ar",
-    "_is_evening": "sb",
-    "_tags": "tg",
-    "_type": "tp",
-    "_due_date_suppression_date": "dds",
-    "_repeating_template": "rt",
-    "_repeater_migration_date": "rmd",
-    "_delegate": "dl",
-    "_due_date_offset": "do",
-    "_last_alarm_interaction_date": "lai",
-    "_action_group": "agr",
-    "_leaves_tombstone": "lt",
-    "_instance_creation_count": "icc",
-    "_today_index": "ti",
-    "_reminder": "ato",
-    "_instance_creation_start_date": "icsd",
-    "_repeater": "rp",
-    "_after_completion_reference_date": "acrd",
-    "_recurrence_rule": "rr",
-    "_note": "nt",
-}
-
-ALIASES_STRUCT = {v: k for k, v in ALIASES_UNSTRUCT.items()}
+# todo_st_hook = make_dict_structure_fn(
+#     TodoItem,
+#     converter,
+#     _index=override(rename="ix"),
+#     _title=override(rename="tt"),
+#     _status=override(rename="ss"),
+#     _destination=override(rename="st"),
+#     _creation_date=override(rename="cd"),
+#     _modification_date=override(rename="md"),
+#     _scheduled_date=override(rename="sr"),
+#     _today_index_reference_date=override(rename="tir"),
+#     _completion_date=override(rename="sp"),
+#     _due_date=override(rename="dd"),
+#     _trashed=override(rename="tr"),
+#     _instance_creation_paused=override(rename="icp"),
+#     _projects=override(rename="pr"),
+#     _areas=override(rename="ar"),
+#     _is_evening=override(
+#         rename="sb", struct_hook=lambda value, _: bool(value), unstruct_hook=int
+#     ),
+#     _tags=override(rename="tg"),
+#     _type=override(rename="tp"),
+#     _due_date_suppression_date=override(rename="dds"),
+#     _repeating_template=override(rename="rt"),
+#     _repeater_migration_date=override(rename="rmd"),
+#     _delegate=override(rename="dl"),
+#     _due_date_offset=override(rename="do"),
+#     _last_alarm_interaction_date=override(rename="lai"),
+#     _action_group=override(rename="agr"),
+#     _leaves_tombstone=override(rename="lt"),
+#     _instance_creation_count=override(rename="icc"),
+#     _today_index=override(rename="ti"),
+#     _reminder=override(rename="ato"),
+#     _instance_creation_start_date=override(rename="icsd"),
+#     _repeater=override(rename="rp"),
+#     _after_completion_reference_date=override(rename="acrd"),
+#     _recurrence_rule=override(rename="rr"),
+#     _note=override(rename="nt"),
+# )
 
 
-def get_changes(todo: TodoItem) -> dict:
-    return serialize_dict(todo, todo.changes)
+# converter.register_unstructure_hook(TodoItem, todo_unst_hook)
+# converter.register_structure_hook(TodoItem, todo_st_hook)
+
+# converter.register_unstructure_hook(datetime, TodoSerde.timestamp_rounded)
+# converter.register_structure_hook(
+#     datetime, lambda timestamp, _: datetime.fromtimestamp(timestamp, timezone.utc)
+# )
+
+# ALIASES_UNSTRUCT = {
+#     "_index": "ix",
+#     "_title": "tt",
+#     "_status": "ss",
+#     "_destination": "st",
+#     "_creation_date": "cd",
+#     "_modification_date": "md",
+#     "_scheduled_date": "sr",
+#     "_today_index_reference_date": "tir",
+#     "_completion_date": "sp",
+#     "_due_date": "dd",
+#     "_trashed": "tr",
+#     "_instance_creation_paused": "icp",
+#     "_projects": "pr",
+#     "_areas": "ar",
+#     "_is_evening": "sb",
+#     "_tags": "tg",
+#     "_type": "tp",
+#     "_due_date_suppression_date": "dds",
+#     "_repeating_template": "rt",
+#     "_repeater_migration_date": "rmd",
+#     "_delegate": "dl",
+#     "_due_date_offset": "do",
+#     "_last_alarm_interaction_date": "lai",
+#     "_action_group": "agr",
+#     "_leaves_tombstone": "lt",
+#     "_instance_creation_count": "icc",
+#     "_today_index": "ti",
+#     "_reminder": "ato",
+#     "_instance_creation_start_date": "icsd",
+#     "_repeater": "rp",
+#     "_after_completion_reference_date": "acrd",
+#     "_recurrence_rule": "rr",
+#     "_note": "nt",
+# }
+
+# ALIASES_STRUCT = {v: k for k, v in ALIASES_UNSTRUCT.items()}
 
 
-def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
-    # d = asdict(todo)
-    d = converter.unstructure(todo)
-    # filter allowed keys
-    return {ALIASES_UNSTRUCT[k]: v for k, v in d.items() if keys is None or k in keys}
+# def get_changes(todo: TodoItem) -> dict:
+#     return serialize_dict(todo, todo.changes)
 
 
-def deserialize(api_object: dict) -> TodoItem:
-    return converter.structure(api_object, TodoItem)
+# def serialize_dict(todo: TodoItem, keys: set[str] | None = None) -> dict:
+#     # d = asdict(todo)
+#     d = converter.unstructure(todo)
+#     # filter allowed keys
+#     return {ALIASES_UNSTRUCT[k]: v for k, v in d.items() if keys is None or k in keys}
 
 
-def translate_keys_deserialize(keys: set[str]) -> set[str]:
-    return {ALIASES_STRUCT[k] for k in keys}
+# def deserialize(api_object: dict) -> TodoItem:
+#     return converter.structure(api_object, TodoItem)
+
+
+# def translate_keys_deserialize(keys: set[str]) -> set[str]:
+#     return {ALIASES_STRUCT[k] for k in keys}

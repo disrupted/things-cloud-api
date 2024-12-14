@@ -7,7 +7,7 @@ from structlog import get_logger
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException, ThingsUpdateException
 from things_cloud.models.serde import JsonSerde
-from things_cloud.models.todo import TodoItem, deserialize, serialize_dict
+from things_cloud.models.todo import TodoItem
 from things_cloud.utils import Util
 
 log = get_logger()
