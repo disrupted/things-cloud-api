@@ -55,39 +55,45 @@ class TodoApiObject(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(populate_by_name=True)
 
     _uuid: ShortUUID | None = pydantic.PrivateAttr(default=None)
-    index: int = pydantic.Field(alias="ix")
-    title: str = pydantic.Field(alias="tt")
-    status: Status = pydantic.Field(alias="ss")
-    destination: Destination = pydantic.Field(alias="st")
-    creation_date: Timestamp | None = pydantic.Field(alias="cd")
-    modification_date: Timestamp | None = pydantic.Field(alias="md")
-    scheduled_date: Timestamp | None = pydantic.Field(alias="sr")
-    today_index_reference_date: Timestamp | None = pydantic.Field(alias="tir")
-    completion_date: Timestamp | None = pydantic.Field(alias="sp")
-    due_date: Timestamp | None = pydantic.Field(alias="dd")
-    trashed: bool = pydantic.Field(alias="tr")
-    instance_creation_paused: bool = pydantic.Field(alias="icp")
-    projects: list[str] = pydantic.Field(alias="pr")
-    areas: list[str] = pydantic.Field(alias="ar")
-    is_evening: BoolBit = pydantic.Field(alias="sb")
-    tags: list[Any] = pydantic.Field(alias="tg")
-    type: Type = pydantic.Field(alias="tp")
-    due_date_suppression_date: Timestamp | None = pydantic.Field(alias="dds")
-    repeating_template: list[str] = pydantic.Field(alias="rt")
-    repeater_migration_date: Any = pydantic.Field(alias="rmd")
-    delegate: list[Any] = pydantic.Field(alias="dl")
-    due_date_offset: int = pydantic.Field(alias="do")
-    last_alarm_interaction_date: Timestamp | None = pydantic.Field(alias="lai")
-    action_group: list[str] = pydantic.Field(alias="agr")
-    leaves_tombstone: bool = pydantic.Field(alias="lt")
-    instance_creation_count: int = pydantic.Field(alias="icc")
-    today_index: int = pydantic.Field(alias="ti")
-    reminder: time | None = pydantic.Field(alias="ato")
-    instance_creation_start_date: Timestamp | None = pydantic.Field(alias="icsd")
-    repeater: Any = pydantic.Field(alias="rp")
-    after_completion_reference_date: Timestamp | None = pydantic.Field(alias="acrd")
-    recurrence_rule: str | None = pydantic.Field(alias="rr")
-    note: Note = pydantic.Field(alias="nt")
+    index: Annotated[int, pydantic.Field(alias="ix")]
+    title: Annotated[str, pydantic.Field(alias="tt")]
+    status: Annotated[Status, pydantic.Field(alias="ss")]
+    destination: Annotated[Destination, pydantic.Field(alias="st")]
+    creation_date: Annotated[Timestamp | None, pydantic.Field(alias="cd")]
+    modification_date: Annotated[Timestamp | None, pydantic.Field(alias="md")]
+    scheduled_date: Annotated[Timestamp | None, pydantic.Field(alias="sr")]
+    today_index_reference_date: Annotated[Timestamp | None, pydantic.Field(alias="tir")]
+    completion_date: Annotated[Timestamp | None, pydantic.Field(alias="sp")]
+    due_date: Annotated[Timestamp | None, pydantic.Field(alias="dd")]
+    trashed: Annotated[bool, pydantic.Field(alias="tr")]
+    instance_creation_paused: Annotated[bool, pydantic.Field(alias="icp")]
+    projects: Annotated[list[str], pydantic.Field(alias="pr")]
+    areas: Annotated[list[str], pydantic.Field(alias="ar")]
+    is_evening: Annotated[BoolBit, pydantic.Field(alias="sb")]
+    tags: Annotated[list[Any], pydantic.Field(alias="tg")]
+    type: Annotated[Type, pydantic.Field(alias="tp")]
+    due_date_suppression_date: Annotated[Timestamp | None, pydantic.Field(alias="dds")]
+    repeating_template: Annotated[list[str], pydantic.Field(alias="rt")]
+    repeater_migration_date: Annotated[Any, pydantic.Field(alias="rmd")]
+    delegate: Annotated[list[Any], pydantic.Field(alias="dl")]
+    due_date_offset: Annotated[int, pydantic.Field(alias="do")]
+    last_alarm_interaction_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="lai")
+    ]
+    action_group: Annotated[list[str], pydantic.Field(alias="agr")]
+    leaves_tombstone: Annotated[bool, pydantic.Field(alias="lt")]
+    instance_creation_count: Annotated[int, pydantic.Field(alias="icc")]
+    today_index: Annotated[int, pydantic.Field(alias="ti")]
+    reminder: Annotated[time | None, pydantic.Field(alias="ato")]
+    instance_creation_start_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="icsd")
+    ]
+    repeater: Annotated[Any, pydantic.Field(alias="rp")]
+    after_completion_reference_date: Annotated[
+        Timestamp | None, pydantic.Field(alias="acrd")
+    ]
+    recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")]
+    note: Annotated[Note, pydantic.Field(alias="nt")]
 
     def to_todo(self) -> TodoItem:
         return TodoItem()
@@ -176,13 +182,13 @@ class TodoItem(pydantic.BaseModel):
             creation_date=self.creation_date,
             modification_date=self.modification_date,
             scheduled_date=self.scheduled_date,
-            today_index_reference_date=self.today_index_reference_date,
+            today_index_reference_date=self.today_index_reference_date_,
             completion_date=self.completion_date,
             due_date=self.due_date,
             trashed=self.trashed,
             instance_creation_paused=self.instance_creation_paused,
-            projects=self.projects,
-            areas=self.areas,
+            projects=self.projects_,
+            areas=self.areas_,
             is_evening=self.is_evening,
             tags=self.tags,
             type=self.type,
@@ -200,6 +206,8 @@ class TodoItem(pydantic.BaseModel):
             instance_creation_start_date=self.instance_creation_start_date,
             repeater=self.repeater,
             after_completion_reference_date=self.after_completion_reference_date,
+            recurrence_rule=self.recurrence_rule,
+            note=self.note,
         )
 
     # @pydantic.model_serializer(mode="wrap")
