@@ -81,13 +81,13 @@ def test_process_new():
     assert todo._uuid == "aBCDiHyah4Uf0MQqp11jsX"
     assert todo._index == 1234
     assert todo._title == "test task"
-    assert todo._status == Status.TODO
+    assert todo.status_ == Status.TODO
     assert todo._destination == Destination.ANYTIME
     assert todo._creation_date == time
     assert todo._modification_date == time
     assert todo._scheduled_date is None
     assert todo._today_index_reference_date is None
-    assert todo._completion_date is None
+    assert todo.completion_date_ is None
     assert todo._due_date is None
     assert todo._trashed is False
     assert todo._instance_creation_paused is False
