@@ -11,10 +11,10 @@ class Serde(ABC):
     type_serializers: dict[type, Callable]
 
     @abstractmethod
-    def serialize(self, v, *, default=None) -> str: ...  # noqa: E704
+    def serialize(self, v, *, default=None) -> str: ...
 
     @abstractmethod
-    def deserialize(self, v) -> Any: ...  # noqa: E704
+    def deserialize(self, v) -> Any: ...
 
 
 class JsonSerde(Serde):

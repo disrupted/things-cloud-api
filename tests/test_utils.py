@@ -9,7 +9,7 @@ FAKE_TIME = datetime(2021, 11, 1, 21, 0, 59, tzinfo=timezone(timedelta(hours=2))
 
 @freeze_time(FAKE_TIME)
 def test_now():
-    assert Util.now() == datetime(2021, 11, 1, 19, 0, 59)
+    assert Util.now() == datetime(2021, 11, 1, 19, 0, 59, tzinfo=timezone.utc)
 
 
 @freeze_time(FAKE_TIME)

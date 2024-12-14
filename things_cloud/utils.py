@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 
 from shortuuid import ShortUUID
 
@@ -6,7 +6,7 @@ from shortuuid import ShortUUID
 class Util:
     @staticmethod
     def now() -> datetime:
-        return datetime.utcnow()
+        return datetime.now(UTC)
 
     @staticmethod
     def today() -> datetime:
