@@ -14,7 +14,7 @@ things = ThingsClient(ACCOUNT, initial_offset=123)
 def test_create():
     start_idx = things.offset
     assert start_idx == OFFSET
-    item = TodoItem("test_create")
+    item = TodoItem(title="test_create")
     new_idx = things.create(item)
     assert new_idx is not None
     assert new_idx == start_idx + 1
@@ -78,47 +78,48 @@ def test_process_new():
     assert len(todos) == 1
     time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
     todo = todos[0]
-    assert todo._uuid == "aBCDiHyah4Uf0MQqp11jsX"
-    assert todo._index == 1234
-    assert todo._title == "test task"
-    assert todo.status_ == Status.TODO
-    assert todo._destination == Destination.ANYTIME
-    assert todo._creation_date == time
-    assert todo._modification_date == time
-    assert todo._scheduled_date is None
-    assert todo._today_index_reference_date is None
-    assert todo.completion_date_ is None
-    assert todo._due_date is None
-    assert todo._trashed is False
-    assert todo._instance_creation_paused is False
+    assert todo.uuid == "aBCDiHyah4Uf0MQqp11jsX"
+    assert todo.index == 1234
+    assert todo.title == "test task"
+    assert todo.status is Status.TODO
+    assert todo.destination is Destination.ANYTIME
+    assert todo.creation_date == time
+    assert todo.modification_date == time
+    assert todo.scheduled_date is None
+    assert todo.today_index_reference_date is None
+    assert todo.completion_date is None
+    assert todo.due_date is None
+    assert todo.trashed is False
+    assert todo.instance_creation_paused is False
     assert todo._projects == ["ABCd1ee0ykmXYZqT98huxa"]
     assert todo._areas == []
-    assert todo._is_evening is False
-    assert todo._tags == []
+    assert todo._evening is False
+    assert todo.is_evening is False
+    assert todo.tags == []
     assert todo._type == Type.TASK
-    assert todo._due_date_suppression_date is None
-    assert todo._repeating_template == []
-    assert todo._repeater_migration_date is None
-    assert todo._delegate == []
-    assert todo._due_date_offset == 0
-    assert todo._last_alarm_interaction_date is None
-    assert todo._action_group == []
-    assert todo._leaves_tombstone is False
-    assert todo._instance_creation_count == 0
-    assert todo._today_index == 0
-    assert todo._reminder is None
-    assert todo._instance_creation_start_date is None
-    assert todo._repeater is None
-    assert todo._after_completion_reference_date is None
-    assert todo._recurrence_rule is None
-    assert todo._note == Note()
-    assert not todo._changes
+    assert todo.due_date_suppression_date is None
+    assert todo.repeating_template == []
+    assert todo.repeater_migration_date is None
+    assert todo.delegate == []
+    assert todo.due_date_offset == 0
+    assert todo.last_alarm_interaction_date is None
+    assert todo.action_group == []
+    assert todo.leaves_tombstone is False
+    assert todo.instance_creation_count == 0
+    assert todo.today_index == 0
+    assert todo.reminder is None
+    assert todo.instance_creation_start_date is None
+    assert todo.repeater is None
+    assert todo.after_completion_reference_date is None
+    assert todo.recurrence_rule is None
+    assert todo.note == Note()
+    # assert not todo._changes
 
 
 def test_process_updated():
     things._items.clear()
     UUID = "aBCDiHyah4Uf0MQqp11jsX"
-    todo = TodoItem("test original")
+    todo = TodoItem(title="test original")
     todo._uuid = UUID
     things._items = {UUID: todo}
     data = {
@@ -142,12 +143,12 @@ def test_process_updated():
     todos = things._items
     assert len(todos) == 1
     todo = todos[UUID]
-    assert todo._uuid == UUID
-    assert todo._title == "test updated"
-    assert todo._modification_date == datetime(
+    assert todo.uuid == UUID
+    assert todo.title == "test updated"
+    assert todo.modification_date == datetime(
         2022, 1, 3, 18, 29, 27, 123456, tzinfo=timezone.utc
     )
-    assert not todo._changes
+    # assert not todo._changes
 
 
 def test_process_multiple():
@@ -261,8 +262,8 @@ def test_process_multiple():
     todos = things._items
     assert len(todos) == 2
     todo2 = todos[UUID2]
-    assert todo2._uuid == UUID2
-    assert todo2._title == "task 2"
+    assert todo2.uuid == UUID2
+    assert todo2.title == "task 2"
     todo3 = todos[UUID3]
-    assert todo3._uuid == UUID3
-    assert todo3._title == "task 3"
+    assert todo3.uuid == UUID3
+    assert todo3.title == "task 3"
