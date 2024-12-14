@@ -16,16 +16,16 @@ jobs:
           - "3.12"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install poetry
+      - name: Install Poetry
         run: pipx install poetry
 
-      - name: Configure poetry virtualenv
+      - name: Configure Poetry virtualenv
         run: poetry config virtualenvs.in-project true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: poetry
@@ -36,21 +36,16 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Lint flake8
-        run: |
-          poetry run pre-commit run --hook-stage manual flake8 --all-files --show-diff-on-failure
+        run: poetry run pre-commit run --hook-stage manual flake8 --all-files --show-diff-on-failure
 
       - name: Check black
-        run: |
-          poetry run pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
+        run: poetry run pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
 
       - name: Check mypy
-        run: |
-          poetry run pre-commit run --hook-stage manual mypy --all-files
+        run: poetry run pre-commit run --hook-stage manual mypy --all-files
 
       - name: Check syntax update
-        run: |
-          poetry run pre-commit run --hook-stage manual pyupgrade --all-files
+        run: poetry run pre-commit run --hook-stage manual pyupgrade --all-files
 
       - name: Test pytest
-        run: |
-          poetry run pytest
+        run: poetry run pytest

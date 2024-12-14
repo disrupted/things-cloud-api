@@ -10,27 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Get Python version
         id: python-version
-        run: echo ::set-output name=version::"$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")"
+        run: echo version="$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")" >> "$GITHUB_OUTPUT"
 
-      - name: Run poetry image
-        uses: abatilo/actions-poetry@v3.0.0
+      - name: Run Poetry image
+        uses: abatilo/actions-poetry@v3.0.1
         with:
           poetry-version: "1.1.12"
 
-      - name: Set poetry virtualenv
+      - name: Set Poetry virtualenv
         run: poetry config virtualenvs.in-project true
 
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache
         with:
           path: .venv
@@ -47,8 +47,7 @@ jobs:
       # - name: Bump version
       #   env:
       #     VERSION: ${{ github.event.release.tag_name }}
-      #   run: |
-      #     poetry version $(echo $VERSION | sed -e 's/^v//')
+      #   run: poetry version $(echo $VERSION | sed -e 's/^v//')
 
       - name: Build
         run: poetry build
@@ -58,11 +57,9 @@ jobs:
           POETRY_REPOSITORIES_TESTPYPI_URL: https://test.pypi.org/legacy/
           POETRY_HTTP_BASIC_TESTPYPI_USERNAME: __token__
           POETRY_HTTP_BASIC_TESTPYPI_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        run: |
-          poetry publish -r testpypi
+        run: poetry publish -r testpypi
 
       - name: Publish PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          poetry publish
+        run: poetry publish
