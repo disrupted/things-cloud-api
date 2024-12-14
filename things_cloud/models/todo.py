@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Callable
 from datetime import datetime, time, timezone
-from enum import Enum
+from enum import IntEnum
 from typing import Any, Concatenate, ParamSpec, TypeVar
 
 import cattrs
@@ -17,20 +17,20 @@ from things_cloud.utils import Util
 SERDE = TodoSerde()
 
 
-class Type(int, Enum):
+class Type(IntEnum):
     TASK = 0
     PROJECT = 1
     HEADING = 2
 
 
-class Destination(int, Enum):
+class Destination(IntEnum):
     # destination: {0: inbox, 1: anytime/today/evening, 2: someday}
     INBOX = 0
     ANYTIME = 1
     SOMEDAY = 2
 
 
-class Status(int, Enum):
+class Status(IntEnum):
     TODO = 0
     CANCELLED = 2
     COMPLETE = 3
