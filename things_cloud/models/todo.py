@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime, time, timezone
 from enum import Enum
-from typing import Any, Deque, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 import cattrs
 from attrs import define, field
@@ -107,7 +108,7 @@ class TodoItem:
         default=None, kw_only=True
     )  # TODO: weird XML values
     _note: Note = field(factory=Note, kw_only=True)
-    _changes: Deque[str] = field(factory=Deque, init=False)
+    _changes: deque[str] = field(factory=deque, init=False)
 
     @property
     def uuid(self) -> str:
