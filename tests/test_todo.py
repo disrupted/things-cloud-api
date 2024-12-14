@@ -455,14 +455,14 @@ def test_to_new_exists(task: TodoItem):
     task._commit(new)
 
     with pytest.raises(
-        ValueError, match="^current version exists for todo, use to_edit instead$"
+        ValueError, match="^current version exists for todo, use _to_edit instead$"
     ):
         task._to_new()
 
 
 def test_to_edit_does_not_exist(task: TodoItem):
     with pytest.raises(
-        ValueError, match="^no current version exists for todo, use to_new instead$"
+        ValueError, match="^no current version exists for todo, use _to_new instead$"
     ):
         task._to_edit()
 

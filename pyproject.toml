@@ -55,7 +55,7 @@ ignore = [
 
 [tool.pytest.ini_options]
 testpaths = "tests"
-addopts = "--cov={package_name} --cov-report term-missing"
+addopts = "--cov=things_cloud --cov-report term-missing"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
