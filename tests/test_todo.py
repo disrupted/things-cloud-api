@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 
 import pytest
 
-from things_cloud.models.serde import TodoSerde
 from things_cloud.models.todo import (
     Destination,
     Note,
@@ -17,7 +16,7 @@ FAKE_TIME = datetime(2021, 1, 1)
 
 
 @pytest.fixture(autouse=True)
-def todo(monkeypatch):
+def mock_time(monkeypatch):
     monkeypatch.setattr("things_cloud.utils.Util.now", lambda: FAKE_TIME)
 
 
@@ -25,106 +24,32 @@ def test_mocked_now():
     assert Util.now() == FAKE_TIME
 
 
-@pytest.mark.skip("fix Util.now mock")
-def test_todo_schema_create():
-    item = TodoItem(title="test")
-
-    d = {
-        "index": 0,
-        "title": "test",
-        "status": Status.TODO,
-        "destination": Destination.INBOX,
-        "creation_date": FAKE_TIME,
-        "modification_date": FAKE_TIME,
-        "scheduled_date": None,
-        "completion_date": None,
-        "acrd": None,
-        "agr": [],
-        "areas": [],
-        "reminder": None,
-        "due_date": None,
-        "dds": None,
-        "dl": [],
-        "do": 0,
-        "icc": 0,
-        "instance_creation_paused": False,
-        "icsd": None,
-        "lai": None,
-        "lt": False,
-        "note": {"_t": "tx", "ch": 0, "t": 0, "v": ""},
-        "projects": [],
-        "rmd": None,
-        "rp": None,
-        "rr": None,
-        "rt": [],
-        "is_evening": 0,
-        "tags": [],
-        "ti": 0,
-        "tir": None,
-        "tp": 0,
-        "in_trash": False,
-    }
-    timestamp = TodoSerde.timestamp_rounded(FAKE_TIME)
-    d_alias = {
-        "ix": 0,
-        "tt": "test",
-        "st": 0,
-        "cd": timestamp,
-        "md": FAKE_TIME,
-        "sr": None,
-        "ss": 0,
-        "acrd": None,
-        "agr": [],
-        "ar": [],
-        "ato": None,
-        "dd": None,
-        "dds": None,
-        "dl": [],
-        "do": 0,
-        "icc": 0,
-        "icp": False,
-        "icsd": None,
-        "lai": None,
-        "lt": False,
-        "nt": {"_t": "tx", "ch": 0, "t": 0, "v": ""},
-        "pr": [],
-        "rmd": None,
-        "rp": None,
-        "rr": None,
-        "rt": [],
-        "sb": 0,
-        "sp": None,
-        "tg": [],
-        "ti": 0,
-        "tir": None,
-        "tp": 0,
-        "tr": False,
-    }
-
-    assert item.model_dump(mode="json", by_alias=False) == d
-    assert item.model_dump(mode="json", by_alias=True) == d_alias
+@pytest.fixture()
+def task() -> TodoItem:
+    return TodoItem(title="test task")
 
 
-def test_basic():
-    todo = TodoItem(title="test task")
-    assert todo.type is Type.TASK
+@pytest.fixture()
+def project() -> TodoItem:
+    return TodoItem(title="test project").as_project()
 
 
-# def test_reset_changes():
-#     todo = TodoItem(title="test task")
+def test_basic(task: TodoItem):
+    assert task.type is Type.TASK
+
+
+# def test_reset_changes(todo: TodoItem):
 #     assert todo.changes == {"title"}
 #     todo.reset_changes()
 #     assert not todo.changes
 
 
-def test_update_title():
-    todo = TodoItem(title="test task")
-    todo.title = "updated task"
+def test_update_title(task: TodoItem):
+    task.title = "updated task"
     # assert todo.changes == {"title", "_modification_date"}
 
 
-def test_as_project():
-    project = TodoItem(title="test project").as_project()
+def test_as_project(project: TodoItem):
     assert project.type is Type.PROJECT
     assert project.instance_creation_paused is True
     assert project.destination is Destination.ANYTIME
@@ -137,14 +62,13 @@ def test_as_project():
     # }
 
 
-def test_assign_project_uuid():
-    todo = TodoItem(title="test task")
-    todo.project = "test-project"
-    assert todo._projects == ["test-project"]
-    assert todo.project == "test-project"
-    assert todo._areas == []
-    assert todo.area is None
-    assert todo.destination is Destination.ANYTIME
+def test_assign_project_uuid(task: TodoItem, project: TodoItem):
+    task.project = project.uuid
+    assert task._projects == [project.uuid]
+    assert task.project == project.uuid
+    assert task._areas == []
+    assert task.area is None
+    assert task.destination is Destination.ANYTIME
     # assert todo.changes == {
     #     "title",
     #     "_destination",
@@ -153,195 +77,191 @@ def test_assign_project_uuid():
     # }
 
 
-def test_assign_project_item():
-    project = TodoItem(title="test project").as_project()
-    todo = TodoItem(title="test task")
-    todo.project = project
-    assert todo._projects == [project.uuid]
-    assert todo.project == project.uuid
-    assert isinstance(todo.project, str)
-    assert todo._areas == []
-    assert todo.area is None
-    assert todo.destination == Destination.ANYTIME
-    # assert todo.changes == {
-    #     "title",
-    #     "_destination",
-    #     "projects_",
-    #     "_modification_date",
-    # }
-
-
-def test_assign_project_invalid():
-    not_project = TodoItem(title="not project")
-    todo = TodoItem(title="test task")
+def test_assign_project_uuid_self(project: TodoItem):
     with pytest.raises(ValueError):
-        todo.project = not_project
-    assert not todo.project
-    assert not todo.area
-    assert not todo.destination
+        project.project = project.uuid
+    # assert not project.changes
+
+
+def test_assign_project_item(task: TodoItem, project: TodoItem):
+    task.project = project
+    assert task._projects == [project.uuid]
+    assert task.project == project.uuid
+    assert isinstance(task.project, str)
+    assert task._areas == []
+    assert task.area is None
+    assert task.destination is Destination.ANYTIME
+    # assert todo.changes == {
+    #     "title",
+    #     "_destination",
+    #     "projects_",
+    #     "_modification_date",
+    # }
+
+
+def test_assign_project_self(project: TodoItem):
+    with pytest.raises(ValueError):
+        project.project = project
+    # assert not project.changes
+
+
+def test_assign_project_invalid(task: TodoItem):
+    not_project = TodoItem(title="not project")
+    with pytest.raises(ValueError):
+        task.project = not_project
+    assert not task.project
+    assert not task.area
+    assert not task.destination
     # assert not todo.changes
 
 
-def test_clear_project():
-    todo = TodoItem(title="test task")
-    todo._projects = ["test-project"]
+def test_clear_project(task: TodoItem):
+    task._projects = ["test-project"]
     # assert not todo.changes
 
     # clear project
-    todo.project = None
-    assert not todo.project
-    assert not todo.area
-    assert not todo.destination
+    task.project = None
+    assert not task.project
+    assert not task.area
+    assert not task.destination
     # assert todo.changes == {
     #     "projects_",
     #     "_modification_date",
     # }
 
 
-def test_assign_area_uuid():
-    todo = TodoItem(title="test task")
-    todo.area = "test-area"
-    assert todo._areas == ["test-area"]
-    assert todo.area == "test-area"
-    assert todo._projects == []
-    assert todo.project is None
-    assert todo.destination == Destination.ANYTIME
-    # assert todo.changes == {
+def test_assign_area_uuid(task: TodoItem):
+    task.area = "test-area"
+    assert task._areas == ["test-area"]
+    assert task.area == "test-area"
+    assert task._projects == []
+    assert task.project is None
+    assert task.destination is Destination.ANYTIME
+    # assert task.changes == {
     #     "_destination",
     #     "areas_",
     #     "_modification_date",
     # }
 
 
-def test_clear_area():
-    todo = TodoItem(title="test task")
-    todo._areas = ["test-area"]
+def test_clear_area(task: TodoItem):
+    task._areas = ["test-area"]
 
     # clear area
-    todo.area = None
-    assert not todo.area
-    assert not todo.project
-    assert not todo.destination
-    # assert todo.changes == {
+    task.area = None
+    assert not task.area
+    assert not task.project
+    assert not task.destination
+    # assert task.changes == {
     #     "areas_",
     #     "_modification_date",
     # }
 
 
-def test_todo():
-    todo = TodoItem(title="test task")
+def test_todo(task: TodoItem):
     # should fail if status is already todo
     with pytest.raises(ValueError):
-        todo.todo()
+        task.todo()
 
-    todo.status = Status.COMPLETE
-    todo.completion_date = datetime(2022, 1, 1)
-    todo.todo()
-    assert todo.status == Status.TODO
-    assert todo.completion_date is None
-    # assert todo.changes == {
+    task.status = Status.COMPLETE
+    task.completion_date = datetime(2022, 1, 1)
+    task.todo()
+    assert task.status is Status.TODO
+    assert task.completion_date is None
+    # assert task.changes == {
     #     "_status",
     #     "_completion_date",
     #     "_modification_date",
     # }
 
 
-def test_complete():
-    todo = TodoItem(title="test task")
-    assert todo.status is Status.TODO
-    assert todo.completion_date is None
-    todo.complete()
-    assert todo.status is Status.COMPLETE
-    assert todo.completion_date == Util.now()
-    # assert todo.changes == {
+def test_complete(task: TodoItem):
+    assert task.status is Status.TODO
+    assert task.completion_date is None
+    task.complete()
+    assert task.status is Status.COMPLETE
+    assert task.completion_date == Util.now()
+    # assert task.changes == {
     #     "_status",
     #     "_completion_date",
     #     "_modification_date",
     # }
 
 
-def test_complete_already_completed():
-    todo = TodoItem(title="test task")
-    todo.status = Status.COMPLETE
-    todo.completion_date = datetime(2022, 1, 1)
+def test_complete_already_completed(task: TodoItem):
+    task.status = Status.COMPLETE
+    task.completion_date = datetime(2022, 1, 1)
     # should fail if status is already complete
     with pytest.raises(ValueError):
-        todo.complete()
-    # assert not todo.changes
+        task.complete()
+    # assert not task.changes
 
 
-def test_cancel():
-    todo = TodoItem(title="test task")
-    todo.cancel()
-    assert todo.status is Status.CANCELLED
-    assert todo.completion_date == Util.now()
-    # assert todo.changes == {
+def test_cancel(task: TodoItem):
+    task.cancel()
+    assert task.status is Status.CANCELLED
+    assert task.completion_date == Util.now()
+    # assert task.changes == {
     #     "_status",
     #     "_completion_date",
     #     "_modification_date",
     # }
 
 
-def test_cancel_already_cancelled():
-    todo = TodoItem(title="test task")
-    todo.status = Status.CANCELLED
-    todo.completion_date = datetime(2022, 1, 1)
+def test_cancel_already_cancelled(task: TodoItem):
+    task.status = Status.CANCELLED
+    task.completion_date = datetime(2022, 1, 1)
     # should fail if status is already cancelled
     with pytest.raises(ValueError):
-        todo.cancel()
-    # assert not todo.changes
+        task.cancel()
+    # assert not task.changes
 
 
-def test_delete():
-    todo = TodoItem(title="test task")
-    assert todo.trashed is False
-    todo.delete()
-    assert todo.trashed is True
-    # assert todo.changes == {
+def test_delete(task: TodoItem):
+    assert task.trashed is False
+    task.delete()
+    assert task.trashed is True
+    # assert task.changes == {
     #     "_modification_date",
     #     "trashed",
     # }
 
 
-def test_delete_already_trashed():
-    todo = TodoItem(title="test task")
-    todo.trashed = True
+def test_delete_already_trashed(task: TodoItem):
+    task.trashed = True
     with pytest.raises(ValueError):
-        todo.delete()
-    # assert not todo.changes
+        task.delete()
+    # assert not task.changes
 
 
-def test_restore():
-    todo = TodoItem(title="test task")
-    todo.delete()
-    assert todo.trashed is True
-    todo.restore()
-    assert todo.trashed is False
-    # assert todo.changes == {
+def test_restore(task: TodoItem):
+    task.delete()
+    assert task.trashed is True
+    task.restore()
+    assert task.trashed is False
+    # assert task.changes == {
     #     "_modification_date",
     #     "trashed",
     # }
 
 
-def test_restore_not_trashed():
-    todo = TodoItem(title="test task")
+def test_restore_not_trashed(task: TodoItem):
     with pytest.raises(ValueError):
-        todo.restore()
-    # assert not todo.changes
+        task.restore()
+    # assert not task.changes
 
 
-def test_today():
-    todo = TodoItem(title="test task")
-    assert todo.is_today is False
-    assert todo.is_evening is False
-    todo.today()
-    assert todo.is_today is True
-    assert todo.is_evening is False
-    assert todo.destination is Destination.ANYTIME
-    assert todo.scheduled_date == Util.today()
-    assert todo._evening is False
-    # assert todo.today_index_reference_date == Util.today()  # FIXME
-    # assert todo.changes == {
+def test_today(task: TodoItem):
+    assert task.is_today is False
+    assert task.is_evening is False
+    task.today()
+    assert task.is_today is True
+    assert task.is_evening is False
+    assert task.destination is Destination.ANYTIME
+    assert task.scheduled_date == Util.today()
+    assert task._evening is False
+    # assert task.today_index_reference_date == Util.today()  # FIXME
+    # assert task.changes == {
     #     "_destination",
     #     "scheduled_date_",
     #     "today_index_reference_date_",
@@ -349,18 +269,17 @@ def test_today():
     # }
 
 
-def test_evening():
-    todo = TodoItem(title="test task")
-    assert todo.is_today is False
-    assert todo.is_evening is False
-    todo.evening()
-    assert todo.is_today is True
-    assert todo.is_evening is True
-    assert todo.destination is Destination.ANYTIME
-    assert todo.scheduled_date == Util.today()
-    assert todo._evening is True
-    # assert todo.today_index_reference_date == Util.today()  # FIXME
-    # assert todo.changes == {
+def test_evening(task: TodoItem):
+    assert task.is_today is False
+    assert task.is_evening is False
+    task.evening()
+    assert task.is_today is True
+    assert task.is_evening is True
+    assert task.destination is Destination.ANYTIME
+    assert task.scheduled_date == Util.today()
+    assert task._evening is True
+    # assert task.today_index_reference_date == Util.today()  # FIXME
+    # assert task.changes == {
     #     "_destination",
     #     "scheduled_date_",
     #     "today_index_reference_date_",
@@ -423,7 +342,7 @@ def test_serde():
     assert todo.areas == []
     assert todo.evening is False
     assert todo.tags == []
-    assert todo.type == Type.TASK
+    assert todo.type is Type.TASK
     assert todo.due_date_suppression_date is None
     assert todo.repeating_template == []
     assert todo.repeater_migration_date is None
@@ -500,7 +419,7 @@ def test_todo_from_api_object():
     assert todo._areas == []
     assert todo.is_evening is False
     assert todo.tags == []
-    assert todo.type == Type.TASK
+    assert todo.type is Type.TASK
     assert todo.due_date_suppression_date is None
     assert todo.repeating_template == []
     assert todo.repeater_migration_date is None

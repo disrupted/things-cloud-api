@@ -235,8 +235,12 @@ class TodoItem(pydantic.BaseModel):
         if isinstance(project, TodoItem):
             if project.type is not Type.PROJECT:
                 raise ValueError("argument must be a project")
+            if self.uuid == project.uuid:
+                raise ValueError("cannot assign self as project")
             self._projects = [project.uuid]
         elif project:
+            if self.uuid == project:
+                raise ValueError("cannot assign self as project")
             self._projects = [project]
 
         if not project:
