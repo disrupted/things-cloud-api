@@ -21,6 +21,7 @@ pytest-cov = "^6.0.0"
 pytest-clarity = "^1.0.1"
 freezegun = "^1.5.1"
 pre-commit = "^4.0.1"
+virtualenv = "^20.28.0" # HACK: fix pre-commit: ModuleNotFoundError: No module named 'distutils'
 ruff = "^0.8.3"
 pyright = { extras = ["nodejs"], version = "^1.1.390" }
 
