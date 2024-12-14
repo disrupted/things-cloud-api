@@ -13,6 +13,12 @@ from things_cloud.utils import Util
 ShortUUID = Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)]
 
 
+class CommitResponse(pydantic.BaseModel):
+    server_head_index: Annotated[
+        pydantic.PositiveInt, pydantic.Field(alias="server-head-index")
+    ]
+
+
 class HistoryResponse(pydantic.BaseModel):
     current_item_index: Annotated[
         pydantic.PositiveInt, pydantic.Field(alias="current-item-index")
@@ -38,17 +44,6 @@ class HistoryResponse(pydantic.BaseModel):
             key, value = next(iter(item.items()))
             yield Update(id=key, body=value)
 
-    # @pydantic.model_validator(mode="before")
-    # def flatten_items(cls, values: dict[str, Any]) -> dict[str, Any]:
-    #     items = values.get("items")
-    #     assert (
-    #         isinstance(items, dict) and len(items) == 1
-    #     ), "malformed API response, expected items dict with one key-value pair"
-
-    #     key, value = next(iter(items.items()))
-    #     values["items"] = Update(id=key, payload=value)
-    #     return values
-
 
 class Update(pydantic.BaseModel):
     id: ShortUUID
@@ -58,6 +53,9 @@ class Update(pydantic.BaseModel):
     # def inject_task_id(self) -> Self:
     #     self.body.payload._uuid = self.id
     #     return self
+
+    def to_api_payload(self) -> dict[ShortUUID, dict[str, Any]]:
+        return {self.id: self.body.to_api_payload()}
 
 
 class UpdateType(IntEnum):
@@ -74,6 +72,9 @@ class NewBody(pydantic.BaseModel):
     payload: Annotated[TodoApiObject, pydantic.Field(alias="p")]
     entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
 
+    def to_api_payload(self) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True)
+
 
 class EditBody(pydantic.BaseModel):
     type: Annotated[Literal[UpdateType.EDIT], pydantic.Field(alias="t")] = (
@@ -81,6 +82,9 @@ class EditBody(pydantic.BaseModel):
     )
     payload: Annotated[TodoDeltaApiObject, pydantic.Field(alias="p")]
     entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+
+    def to_api_payload(self) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 Body = Annotated[NewBody | EditBody, pydantic.Field(discriminator="type")]
@@ -310,7 +314,13 @@ class TodoItem(pydantic.BaseModel):
     note: Note = pydantic.Field(default_factory=Note)
     _api_object: TodoApiObject | None = pydantic.PrivateAttr(default=None)
 
-    def to_api_object(self) -> TodoApiObject:
+    def to_new(self) -> TodoApiObject:
+        if self._api_object:
+            msg = (
+                f"current version exists for todo, use {self.to_edit.__name__} instead"
+            )
+            raise ValueError(msg)
+
         return TodoApiObject(
             index=self.index,
             title=self.title,
@@ -346,6 +356,33 @@ class TodoItem(pydantic.BaseModel):
             recurrence_rule=self.recurrence_rule,
             note=self.note,
         )
+
+    def to_edit(self) -> TodoDeltaApiObject:
+        if not self._api_object:
+            msg = f"no current version exists for todo, use {self.to_new.__name__} instead"
+            raise ValueError(msg)
+
+        keys = self.model_dump(by_alias=False).keys()
+        edits = {}
+        for key in keys:
+            current_value = getattr(self._api_object, key)
+            new_value = getattr(self, key)
+            if current_value == new_value:
+                continue
+            edits[key] = new_value
+        if not edits:
+            raise ValueError("no changes found")
+        return TodoDeltaApiObject.model_validate(edits)
+
+    def _commit(self, complete_or_delta: TodoApiObject | TodoDeltaApiObject) -> None:
+        if isinstance(complete_or_delta, TodoApiObject):
+            self._api_object = complete_or_delta
+
+        else:
+            delta = complete_or_delta.model_dump(by_alias=False, exclude_none=True)
+            for key in delta.keys():
+                new_value = getattr(delta, key)
+                setattr(self._api_object, key, new_value)
 
     @property
     def uuid(self) -> ShortUUID:

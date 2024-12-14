@@ -4,11 +4,13 @@ from structlog import get_logger
 
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
-from things_cloud.models.serde import JsonSerde
 from things_cloud.models.todo import (
+    CommitResponse,
+    EditBody,
     HistoryResponse,
     NewBody,
     TodoItem,
+    Update,
     UpdateType,
 )
 from things_cloud.utils import Util
@@ -121,8 +123,8 @@ class ThingsClient:
     def __commit(
         self,
         index: int,
-        data: dict | None = None,
-    ) -> int:
+        update: Update,
+    ) -> CommitResponse:
         response = self.__request(
             method="POST",
             endpoint="/commit",
@@ -130,32 +132,32 @@ class ThingsClient:
                 "ancestor-index": str(index),
                 "_cnt": "1",
             },
-            content=JsonSerde.dumps(data),
+            content=update.to_api_payload(),
         )
-        return response.json()["server-head-index"]
+        return CommitResponse.model_validate_json(response.read())
 
     def __create_todo(self, index: int, item: TodoItem) -> None:
-        data = {item.uuid: {"t": 0, "e": "Task6", "p": serialize_dict(item)}}
-        log.debug("", data=data)
+        complete = item.to_new()
+        body = NewBody(payload=complete)
+        update = Update(id=item.uuid, body=body)
 
         try:
-            self._offset = self.__commit(index, data)
-            item.reset_changes()
+            commit = self.__commit(index, update)
+            self._offset = commit.server_head_index
+            item._commit(complete)
         except ThingsCloudException as e:
             log.error("Error creating todo")
             raise e
 
     def __modify_todo(self, index: int, item: TodoItem) -> None:
-        changes = item.changes
-        if not changes:
-            log.warning("there are no changes to be sent")
-            return
-        data = {item.uuid: {"t": 1, "e": "Task6", "p": serialize_dict(item, changes)}}
-        log.debug("", data=data)
+        delta = item.to_edit()
+        body = EditBody(payload=delta)
+        update = Update(id=item.uuid, body=body)
 
         try:
-            self._offset = self.__commit(index, data)
-            item.reset_changes()
+            commit = self.__commit(index, update)
+            self._offset = commit.server_head_index
+            item._commit(delta)
         except ThingsCloudException as e:
             log.error("Error modifying todo")
             raise e
