@@ -4,6 +4,7 @@ import pytest
 from freezegun import freeze_time
 
 from things_cloud.models.todo import (
+    XX,
     Destination,
     Note,
     Status,
@@ -309,7 +310,7 @@ def test_serde():
         "ti": 0,
         "tg": [],
         "icp": False,
-        "nt": {"ch": 0, "_t": "tx", "t": 0, "v": ""},
+        "nt": {"ch": 0, "_t": "tx", "t": 1, "v": ""},
         "do": 0,
         "dl": [],
         "lai": None,
@@ -324,6 +325,7 @@ def test_serde():
         "ato": 43200,
         "sb": 0,
         "agr": [],
+        "xx": {"sn": {}, "_t": "oo"},
     }
     todo = TodoApiObject.model_validate(api_object)
     timestamp_rounded = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
@@ -402,6 +404,7 @@ def test_todo_from_api_object():
             "after_completion_reference_date": None,
             "recurrence_rule": None,
             "note": Note(),
+            "xx": XX(),
         }
     )
     todo = api_object.to_todo()
@@ -438,6 +441,7 @@ def test_todo_from_api_object():
     assert todo.after_completion_reference_date is None
     assert todo.recurrence_rule is None
     assert todo.note == Note()
+    assert todo.xx == XX()
     assert todo._synced_state == api_object
 
 

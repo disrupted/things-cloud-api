@@ -69,6 +69,7 @@ class UpdateType(IntEnum):
 
 class EntityType(StrEnum):
     TASK_6 = "Task6"
+    CHECKLIST_ITEM_3 = "ChecklistItem3"
 
 
 class NewBody(pydantic.BaseModel):
@@ -118,10 +119,15 @@ class Status(IntEnum):
 
 
 class Note(pydantic.BaseModel):
-    t_: str = pydantic.Field(alias="_t", default="tx")
+    t_: Annotated[str, pydantic.Field(alias="_t")] = "tx"
     ch: int = 0
-    v: str = ""  # value
-    t: int = 0
+    value: Annotated[str, pydantic.Field(alias="v")] = ""  # value
+    t: int = 1
+
+
+class XX(pydantic.BaseModel):
+    sn: dict = {}
+    t_: Annotated[str, pydantic.Field(alias="_t")] = "oo"
 
 
 class TodoApiObject(pydantic.BaseModel):
@@ -131,8 +137,8 @@ class TodoApiObject(pydantic.BaseModel):
     title: Annotated[str, pydantic.Field(alias="tt")]
     status: Annotated[Status, pydantic.Field(alias="ss")]
     destination: Annotated[Destination, pydantic.Field(alias="st")]
-    creation_date: Annotated[TimestampInt | None, pydantic.Field(alias="cd")]
-    modification_date: Annotated[TimestampFloat | None, pydantic.Field(alias="md")]
+    creation_date: Annotated[TimestampFloat, pydantic.Field(alias="cd")]
+    modification_date: Annotated[TimestampFloat, pydantic.Field(alias="md")]
     scheduled_date: Annotated[TimestampInt | None, pydantic.Field(alias="sr")]
     today_index_reference_date: Annotated[
         TimestampInt | None, pydantic.Field(alias="tir")
@@ -174,6 +180,13 @@ class TodoApiObject(pydantic.BaseModel):
     ]
     recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")]
     note: Annotated[Note, pydantic.Field(alias="nt")]
+    xx: Annotated[XX, pydantic.Field(alias="xx")]
+    # task: Annotated[
+    #     list[ShortUUID] | None,
+    #     pydantic.Field(
+    #         alias="ts", description="for checklist items, references parent task"
+    #     ),
+    # ] = None  # exclude otherwise
 
     def to_todo(self) -> TodoItem:
         todo = TodoItem(
@@ -222,7 +235,7 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     title: Annotated[str | None, pydantic.Field(alias="tt")] = None
     status: Annotated[Status | None, pydantic.Field(alias="ss")] = None
     destination: Annotated[Destination | None, pydantic.Field(alias="st")] = None
-    creation_date: Annotated[TimestampInt | None, pydantic.Field(alias="cd")] = None
+    creation_date: Annotated[TimestampFloat | None, pydantic.Field(alias="cd")] = None
     modification_date: Annotated[TimestampFloat, pydantic.Field(alias="md")] = (
         pydantic.Field(default_factory=Util.now)
     )
@@ -263,6 +276,7 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     ] = None
     recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")] = None
     note: Annotated[Note | None, pydantic.Field(alias="nt")] = None
+    xx: Annotated[XX | None, pydantic.Field(alias="xx")] = None
 
     def apply_edits(self, todo: TodoItem) -> None:
         keys = self.model_dump(by_alias=False, exclude_none=True).keys()
@@ -285,8 +299,8 @@ class TodoItem(pydantic.BaseModel):
     title: str
     _status: Status = pydantic.PrivateAttr(default=Status.TODO)
     _destination: Destination = pydantic.PrivateAttr(default=Destination.INBOX)
-    creation_date: datetime | None = pydantic.Field(default_factory=Util.now)
-    modification_date: datetime | None = pydantic.Field(default_factory=Util.now)
+    creation_date: datetime = pydantic.Field(default_factory=Util.now)
+    modification_date: datetime = pydantic.Field(default_factory=Util.now)
     scheduled_date: datetime | None = pydantic.Field(default=None)
     today_index_reference_date: datetime | None = pydantic.Field(
         default=None, repr=False
@@ -316,6 +330,7 @@ class TodoItem(pydantic.BaseModel):
     after_completion_reference_date: datetime | None = pydantic.Field(default=None)
     recurrence_rule: str | None = pydantic.Field(default=None)  # TODO: weird XML values
     note: Note = pydantic.Field(default_factory=Note)
+    xx: XX = pydantic.Field(default_factory=XX)
     _synced_state: TodoApiObject | None = pydantic.PrivateAttr(default=None)
 
     def to_update(self) -> Update:
@@ -336,6 +351,7 @@ class TodoItem(pydantic.BaseModel):
             )
             raise ValueError(msg)
 
+        self.modification_date = Util.now()
         return TodoApiObject(
             index=self.index,
             title=self.title,
@@ -370,6 +386,7 @@ class TodoItem(pydantic.BaseModel):
             after_completion_reference_date=self.after_completion_reference_date,
             recurrence_rule=self.recurrence_rule,
             note=self.note,
+            xx=self.xx,
         )
 
     def _to_edit(self) -> TodoDeltaApiObject:

@@ -121,14 +121,11 @@ class ThingsClient:
         ]
 
     def __commit(self, update: Update) -> CommitResponse:
-        index = self._offset
-        if update.body.type is UpdateType.NEW:
-            index += 1
         response = self.__request(
             method="POST",
             endpoint="/commit",
             params={
-                "ancestor-index": str(index),
+                "ancestor-index": str(self._offset),
                 "_cnt": "1",
             },
             json=update.to_api_payload(),

@@ -11,6 +11,7 @@ from pytest_httpx import HTTPXMock
 from things_cloud.api.account import Account, Credentials
 from things_cloud.api.client import HistoryResponse, ThingsClient
 from things_cloud.models.todo import (
+    XX,
     Destination,
     EditBody,
     NewBody,
@@ -99,6 +100,7 @@ def task() -> TodoItem:
     return task
 
 
+@freeze_time(datetime(2024, 12, 9, 12, 31, 47, 123456, tzinfo=timezone.utc))
 def test_create(
     things: ThingsClient, task: TodoItem, account_id: uuid.UUID, httpx_mock: HTTPXMock
 ):
@@ -116,7 +118,7 @@ def test_create(
     assert request.method == "POST"
     assert (
         request.url
-        == f"https://cloud.culturedcode.com/version/1/history/{account_id}/commit?ancestor-index=124&_cnt=1"
+        == f"https://cloud.culturedcode.com/version/1/history/{account_id}/commit?ancestor-index={start_idx}&_cnt=1"
     )
     assert json.loads(request.content) == {
         "tiqzvgT8m7ME4gooPqtdq3": {
@@ -126,8 +128,8 @@ def test_create(
                 "tt": "test_create",
                 "ss": 0,
                 "st": 0,
-                "cd": 1733747506,
-                "md": 1733747506.919961,
+                "cd": 1733747506.919961,
+                "md": 1733747507.123456,
                 "sr": None,
                 "tir": None,
                 "sp": None,
@@ -154,7 +156,8 @@ def test_create(
                 "rp": None,
                 "acrd": None,
                 "rr": None,
-                "nt": {"_t": "tx", "ch": 0, "v": "", "t": 0},
+                "nt": {"_t": "tx", "ch": 0, "v": "", "t": 1},
+                "xx": {"sn": {}, "_t": "oo"},
             },
             "e": "Task6",
         }
@@ -233,7 +236,7 @@ def history_data_new() -> dict[str, Any]:
                         "ti": 0,
                         "tg": [],
                         "icp": False,
-                        "nt": {"ch": 0, "_t": "tx", "t": 0, "v": ""},
+                        "nt": {"ch": 0, "_t": "tx", "t": 1, "v": ""},
                         "do": 0,
                         "dl": [],
                         "lai": None,
@@ -248,6 +251,7 @@ def history_data_new() -> dict[str, Any]:
                         "ato": None,
                         "sb": 0,
                         "agr": [],
+                        "xx": {"sn": {}, "_t": "oo"},
                     },
                     "e": "Task6",
                     "t": 0,
@@ -317,6 +321,7 @@ def test_history_new(things: ThingsClient, history_new: HistoryResponse):
     assert todo.after_completion_reference_date is None
     assert todo.recurrence_rule is None
     assert todo.note == Note()
+    assert todo.xx == XX()
     # assert not todo._changes
 
 
@@ -420,6 +425,7 @@ def history_data_mixed() -> dict[str, Any]:
                         "ato": None,
                         "sb": 0,
                         "agr": [],
+                        "xx": {"sn": {}, "_t": "oo"},
                     },
                     "e": "Task6",
                     "t": 0,
@@ -462,6 +468,7 @@ def history_data_mixed() -> dict[str, Any]:
                         "ato": None,
                         "sb": 0,
                         "agr": [],
+                        "xx": {"sn": {}, "_t": "oo"},
                     },
                     "e": "Task6",
                     "t": 0,
