@@ -68,6 +68,8 @@ class EntityType(StrEnum):
 
 
 class NewBody(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(populate_by_name=True)
+
     type: Annotated[Literal[UpdateType.NEW], pydantic.Field(alias="t")] = UpdateType.NEW
     payload: Annotated[TodoApiObject, pydantic.Field(alias="p")]
     entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
@@ -77,6 +79,8 @@ class NewBody(pydantic.BaseModel):
 
 
 class EditBody(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(populate_by_name=True)
+
     type: Annotated[Literal[UpdateType.EDIT], pydantic.Field(alias="t")] = (
         UpdateType.EDIT
     )

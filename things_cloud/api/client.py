@@ -128,6 +128,6 @@ class ThingsClient:
                 "ancestor-index": str(index),
                 "_cnt": "1",
             },
-            content=update.to_api_payload(),
+            json=update.to_api_payload(),
         )
         return CommitResponse.model_validate_json(response.read())
