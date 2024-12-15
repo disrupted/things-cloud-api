@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 
 import pytest
 
@@ -320,20 +320,19 @@ def test_serde():
         "sp": None,
         "st": 1,
         "icc": 0,
-        "ato": None,
+        "ato": 43200,
         "sb": 0,
         "agr": [],
     }
     todo = TodoApiObject.model_validate(api_object)
-    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
+    timestamp_rounded = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
+    timestamp_precise = datetime(2022, 1, 3, 18, 29, 27, 7013, tzinfo=timezone.utc)
     assert todo.index == 1234
     assert todo.title == "test task"
     assert todo.status is Status.TODO
     assert todo.destination is Destination.ANYTIME
-    assert todo.creation_date == time
-    assert todo.modification_date == datetime(
-        2022, 1, 3, 18, 29, 27, 7013, tzinfo=timezone.utc
-    )
+    assert todo.creation_date == timestamp_rounded
+    assert todo.modification_date == timestamp_precise
     assert todo.scheduled_date is None
     assert todo.today_index_reference_date is None
     assert todo.completion_date is None
@@ -355,7 +354,7 @@ def test_serde():
     assert todo.leaves_tombstone is False
     assert todo.instance_creation_count == 0
     assert todo.today_index == 0
-    assert todo.reminder is None
+    assert todo.reminder == time(12, 0, tzinfo=timezone.utc)
     assert todo.instance_creation_start_date is None
     assert todo.repeater is None
     assert todo.after_completion_reference_date is None

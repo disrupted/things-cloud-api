@@ -7,10 +7,14 @@ from typing import Annotated, Any, Literal
 
 import pydantic
 
-from things_cloud.models.serde import TodoSerde
+from things_cloud.models.types import (
+    BoolBit,
+    ShortUUID,
+    TimeInt,
+    TimestampFloat,
+    TimestampInt,
+)
 from things_cloud.utils import Util
-
-ShortUUID = Annotated[str, pydantic.StringConstraints(min_length=22, max_length=22)]
 
 
 class CommitResponse(pydantic.BaseModel):
@@ -120,23 +124,6 @@ class Note(pydantic.BaseModel):
     t: int = 0
 
 
-TimestampInt = Annotated[
-    datetime,
-    pydantic.PlainValidator(
-        TodoSerde.from_timestamp, json_schema_input_type=datetime | int
-    ),
-    pydantic.PlainSerializer(TodoSerde.timestamp_rounded),
-]
-TimestampFloat = Annotated[
-    datetime,
-    pydantic.PlainValidator(
-        TodoSerde.from_timestamp, json_schema_input_type=datetime | float
-    ),
-    pydantic.PlainSerializer(TodoSerde.timestamp_precise),
-]
-BoolBit = Annotated[bool, pydantic.PlainSerializer(int)]
-
-
 class TodoApiObject(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(populate_by_name=True)
 
@@ -177,7 +164,7 @@ class TodoApiObject(pydantic.BaseModel):
     leaves_tombstone: Annotated[bool, pydantic.Field(alias="lt")]
     instance_creation_count: Annotated[int, pydantic.Field(alias="icc")]
     today_index: Annotated[int, pydantic.Field(alias="ti")]
-    reminder: Annotated[time | None, pydantic.Field(alias="ato")]
+    reminder: Annotated[TimeInt | None, pydantic.Field(alias="ato")]
     instance_creation_start_date: Annotated[
         TimestampInt | None, pydantic.Field(alias="icsd")
     ]
@@ -266,7 +253,7 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     leaves_tombstone: Annotated[bool | None, pydantic.Field(alias="lt")] = None
     instance_creation_count: Annotated[int | None, pydantic.Field(alias="icc")] = None
     today_index: Annotated[int | None, pydantic.Field(alias="ti")] = None
-    reminder: Annotated[time | None, pydantic.Field(alias="ato")] = None
+    reminder: Annotated[TimeInt | None, pydantic.Field(alias="ato")] = None
     instance_creation_start_date: Annotated[
         TimestampInt | None, pydantic.Field(alias="icsd")
     ] = None
