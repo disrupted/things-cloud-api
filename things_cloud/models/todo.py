@@ -120,12 +120,19 @@ class Note(pydantic.BaseModel):
     t: int = 0
 
 
-Timestamp = Annotated[
+TimestampInt = Annotated[
     datetime,
     pydantic.PlainValidator(
         TodoSerde.from_timestamp, json_schema_input_type=datetime | int
     ),
     pydantic.PlainSerializer(TodoSerde.timestamp_rounded),
+]
+TimestampFloat = Annotated[
+    datetime,
+    pydantic.PlainValidator(
+        TodoSerde.from_timestamp, json_schema_input_type=datetime | float
+    ),
+    pydantic.PlainSerializer(TodoSerde.timestamp_precise),
 ]
 BoolBit = Annotated[bool, pydantic.PlainSerializer(int)]
 
@@ -137,12 +144,14 @@ class TodoApiObject(pydantic.BaseModel):
     title: Annotated[str, pydantic.Field(alias="tt")]
     status: Annotated[Status, pydantic.Field(alias="ss")]
     destination: Annotated[Destination, pydantic.Field(alias="st")]
-    creation_date: Annotated[Timestamp | None, pydantic.Field(alias="cd")]
-    modification_date: Annotated[Timestamp | None, pydantic.Field(alias="md")]
-    scheduled_date: Annotated[Timestamp | None, pydantic.Field(alias="sr")]
-    today_index_reference_date: Annotated[Timestamp | None, pydantic.Field(alias="tir")]
-    completion_date: Annotated[Timestamp | None, pydantic.Field(alias="sp")]
-    due_date: Annotated[Timestamp | None, pydantic.Field(alias="dd")]
+    creation_date: Annotated[TimestampInt | None, pydantic.Field(alias="cd")]
+    modification_date: Annotated[TimestampFloat | None, pydantic.Field(alias="md")]
+    scheduled_date: Annotated[TimestampInt | None, pydantic.Field(alias="sr")]
+    today_index_reference_date: Annotated[
+        TimestampInt | None, pydantic.Field(alias="tir")
+    ]
+    completion_date: Annotated[TimestampInt | None, pydantic.Field(alias="sp")]
+    due_date: Annotated[TimestampInt | None, pydantic.Field(alias="dd")]
     trashed: Annotated[bool, pydantic.Field(alias="tr")]
     instance_creation_paused: Annotated[bool, pydantic.Field(alias="icp")]
     projects: Annotated[list[str], pydantic.Field(alias="pr")]
@@ -150,7 +159,9 @@ class TodoApiObject(pydantic.BaseModel):
     evening: Annotated[BoolBit, pydantic.Field(alias="sb")]
     tags: Annotated[list[Any], pydantic.Field(alias="tg")]
     type: Annotated[Type, pydantic.Field(alias="tp")]
-    due_date_suppression_date: Annotated[Timestamp | None, pydantic.Field(alias="dds")]
+    due_date_suppression_date: Annotated[
+        TimestampInt | None, pydantic.Field(alias="dds")
+    ]
     repeating_template: Annotated[list[str], pydantic.Field(alias="rt")]
     repeater_migration_date: Annotated[
         Any, pydantic.Field(alias="rmd")
@@ -160,7 +171,7 @@ class TodoApiObject(pydantic.BaseModel):
     ]  # TODO: date type yet to be seen
     due_date_offset: Annotated[int, pydantic.Field(alias="do")]
     last_alarm_interaction_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="lai")
+        TimestampInt | None, pydantic.Field(alias="lai")
     ]
     action_group: Annotated[list[str], pydantic.Field(alias="agr")]
     leaves_tombstone: Annotated[bool, pydantic.Field(alias="lt")]
@@ -168,11 +179,11 @@ class TodoApiObject(pydantic.BaseModel):
     today_index: Annotated[int, pydantic.Field(alias="ti")]
     reminder: Annotated[time | None, pydantic.Field(alias="ato")]
     instance_creation_start_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="icsd")
+        TimestampInt | None, pydantic.Field(alias="icsd")
     ]
     repeater: Annotated[Any, pydantic.Field(alias="rp")]
     after_completion_reference_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="acrd")
+        TimestampInt | None, pydantic.Field(alias="acrd")
     ]
     recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")]
     note: Annotated[Note, pydantic.Field(alias="nt")]
@@ -224,14 +235,16 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     title: Annotated[str | None, pydantic.Field(alias="tt")] = None
     status: Annotated[Status | None, pydantic.Field(alias="ss")] = None
     destination: Annotated[Destination | None, pydantic.Field(alias="st")] = None
-    creation_date: Annotated[Timestamp | None, pydantic.Field(alias="cd")] = None
-    modification_date: Annotated[Timestamp | None, pydantic.Field(alias="md")] = None
-    scheduled_date: Annotated[Timestamp | None, pydantic.Field(alias="sr")] = None
+    creation_date: Annotated[TimestampInt | None, pydantic.Field(alias="cd")] = None
+    modification_date: Annotated[TimestampFloat | None, pydantic.Field(alias="md")] = (
+        None
+    )
+    scheduled_date: Annotated[TimestampInt | None, pydantic.Field(alias="sr")] = None
     today_index_reference_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="tir")
+        TimestampInt | None, pydantic.Field(alias="tir")
     ] = None
-    completion_date: Annotated[Timestamp | None, pydantic.Field(alias="sp")] = None
-    due_date: Annotated[Timestamp | None, pydantic.Field(alias="dd")] = None
+    completion_date: Annotated[TimestampInt | None, pydantic.Field(alias="sp")] = None
+    due_date: Annotated[TimestampInt | None, pydantic.Field(alias="dd")] = None
     trashed: Annotated[bool | None, pydantic.Field(alias="tr")] = None
     instance_creation_paused: Annotated[bool | None, pydantic.Field(alias="icp")] = None
     projects: Annotated[list[str] | None, pydantic.Field(alias="pr")] = None
@@ -240,14 +253,14 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     tags: Annotated[list[Any] | None, pydantic.Field(alias="tg")] = None
     type: Annotated[Type | None, pydantic.Field(alias="tp")] = None
     due_date_suppression_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="dds")
+        TimestampInt | None, pydantic.Field(alias="dds")
     ] = None
     repeating_template: Annotated[list[str] | None, pydantic.Field(alias="rt")] = None
     repeater_migration_date: Annotated[Any | None, pydantic.Field(alias="rmd")] = None
     delegate: Annotated[list[Any] | None, pydantic.Field(alias="dl")] = None
     due_date_offset: Annotated[int | None, pydantic.Field(alias="do")] = None
     last_alarm_interaction_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="lai")
+        TimestampInt | None, pydantic.Field(alias="lai")
     ] = None
     action_group: Annotated[list[str] | None, pydantic.Field(alias="agr")] = None
     leaves_tombstone: Annotated[bool | None, pydantic.Field(alias="lt")] = None
@@ -255,11 +268,11 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     today_index: Annotated[int | None, pydantic.Field(alias="ti")] = None
     reminder: Annotated[time | None, pydantic.Field(alias="ato")] = None
     instance_creation_start_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="icsd")
+        TimestampInt | None, pydantic.Field(alias="icsd")
     ] = None
     repeater: Annotated[Any | None, pydantic.Field(alias="rp")] = None
     after_completion_reference_date: Annotated[
-        Timestamp | None, pydantic.Field(alias="acrd")
+        TimestampInt | None, pydantic.Field(alias="acrd")
     ] = None
     recurrence_rule: Annotated[str | None, pydantic.Field(alias="rr")] = None
     note: Annotated[Note | None, pydantic.Field(alias="nt")] = None

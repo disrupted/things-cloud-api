@@ -314,7 +314,7 @@ def test_serde():
         "lai": None,
         "dd": None,
         "rt": [],
-        "md": 1641234567,
+        "md": 1641234567.007013,
         "ss": 0,
         "sr": None,
         "sp": None,
@@ -331,7 +331,9 @@ def test_serde():
     assert todo.status is Status.TODO
     assert todo.destination is Destination.ANYTIME
     assert todo.creation_date == time
-    assert todo.modification_date == time
+    assert todo.modification_date == datetime(
+        2022, 1, 3, 18, 29, 27, 7013, tzinfo=timezone.utc
+    )
     assert todo.scheduled_date is None
     assert todo.today_index_reference_date is None
     assert todo.completion_date is None

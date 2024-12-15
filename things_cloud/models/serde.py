@@ -59,13 +59,15 @@ class TodoSerde(JsonSerde):
     }
 
     @staticmethod
-    def from_timestamp(timestamp: datetime | int) -> datetime:
+    def from_timestamp(timestamp: datetime | int | float) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
         return datetime.fromtimestamp(timestamp, timezone.utc)
 
     @staticmethod
-    def timestamp_rounded(dt: datetime | None) -> int | None:
-        if dt is None:
-            return None
+    def timestamp_rounded(dt: datetime) -> int:
         return int(dt.timestamp())
+
+    @staticmethod
+    def timestamp_precise(dt: datetime) -> float:
+        return dt.timestamp()
