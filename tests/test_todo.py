@@ -1,6 +1,7 @@
 from datetime import datetime, time, timezone
 
 import pytest
+from freezegun import freeze_time
 
 from things_cloud.models.todo import (
     Destination,
@@ -478,6 +479,7 @@ def test_to_edit_unchanged(task: TodoItem):
         task._to_edit()
 
 
+@freeze_time(datetime(2024, 12, 9, 12, 31, 59, 259919, tzinfo=timezone.utc))
 def test_to_edit(task: TodoItem):
     assert task._synced_state is None
     new = task._to_new()
@@ -487,7 +489,10 @@ def test_to_edit(task: TodoItem):
     task.title = "updated task"
     delta = task._to_edit()
     assert delta
-    assert delta.model_dump(exclude_none=True) == {"title": "updated task"}
+    assert delta.model_dump(exclude_none=True) == {
+        "title": "updated task",
+        "modification_date": 1733747519.259919,
+    }
 
 
 def test_to_edit_detect_reverts(task: TodoItem):

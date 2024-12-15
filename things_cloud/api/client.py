@@ -1,5 +1,5 @@
 import httpx
-from httpx import Request, RequestError, Response
+from httpx import HTTPStatusError, Request, RequestError, Response
 from structlog import get_logger
 
 from things_cloud.api.account import Account
@@ -28,7 +28,7 @@ class ThingsClient:
             headers=HEADERS,
             event_hooks={
                 "request": [self.log_request],
-                "response": [self.raise_on_4xx_5xx, self.log_response],
+                "response": [self.log_response, self.raise_on_4xx_5xx],
             },
         )
         self._session = account.new_session()
@@ -44,7 +44,10 @@ class ThingsClient:
     @staticmethod
     def raise_on_4xx_5xx(response: Response) -> None:
         """Raises a HTTPStatusError on 4xx and 5xx responses."""
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except HTTPStatusError as err:
+            raise ThingsCloudException from err
 
     @staticmethod
     def log_response(response: Response) -> None:
@@ -57,7 +60,7 @@ class ThingsClient:
 
     def update(self) -> None:
         data = self.__fetch(self._offset)
-        self._process_updates(data)
+        self._process_history(data)
         self._offset = data.current_item_index
 
     def commit(self, item: TodoItem) -> None:
@@ -90,7 +93,7 @@ class ThingsClient:
             log.error("Error getting current index", response=response)
             raise ThingsCloudException
 
-    def _process_updates(self, history: HistoryResponse) -> None:
+    def _process_history(self, history: HistoryResponse) -> None:
         for update in history.updates:
             log.debug("processing update", update=update)
             match update.body.type:

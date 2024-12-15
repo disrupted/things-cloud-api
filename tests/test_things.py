@@ -1,8 +1,10 @@
+import json
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 import pytest
+from freezegun import freeze_time
 from pydantic import SecretStr
 from pytest_httpx import HTTPXMock
 
@@ -89,17 +91,26 @@ def test_client_session(things: ThingsClient):
     assert things._session.history_key_session_secret == "fake"
 
 
-def test_create(things: ThingsClient, account_id: uuid.UUID, httpx_mock: HTTPXMock):
+@pytest.fixture()
+@freeze_time(datetime(2024, 12, 9, 12, 31, 46, 919961, tzinfo=timezone.utc))
+def task() -> TodoItem:
+    task = TodoItem(title="test_create")
+    task._uuid = "tiqzvgT8m7ME4gooPqtdq3"  # overwrite uuid so that we can assert it
+    return task
+
+
+def test_create(
+    things: ThingsClient, task: TodoItem, account_id: uuid.UUID, httpx_mock: HTTPXMock
+):
     start_idx = things._offset
     assert start_idx == 123
-    item = TodoItem(title="test_create")
 
     httpx_mock.reset()
     httpx_mock.add_response(
         200,
         json={"server-head-index": 124},
     )
-    things.commit(item)
+    things.commit(task)
     request = httpx_mock.get_request()
     assert request
     assert request.method == "POST"
@@ -107,6 +118,93 @@ def test_create(things: ThingsClient, account_id: uuid.UUID, httpx_mock: HTTPXMo
         request.url
         == f"https://cloud.culturedcode.com/version/1/history/{account_id}/commit?ancestor-index=124&_cnt=1"
     )
+    assert json.loads(request.content) == {
+        "tiqzvgT8m7ME4gooPqtdq3": {
+            "t": 0,
+            "p": {
+                "ix": 0,
+                "tt": "test_create",
+                "ss": 0,
+                "st": 0,
+                "cd": 1733747506,
+                "md": 1733747506.919961,
+                "sr": None,
+                "tir": None,
+                "sp": None,
+                "dd": None,
+                "tr": False,
+                "icp": False,
+                "pr": [],
+                "ar": [],
+                "sb": 0,
+                "tg": [],
+                "tp": 0,
+                "dds": None,
+                "rt": [],
+                "rmd": None,
+                "dl": [],
+                "do": 0,
+                "lai": None,
+                "agr": [],
+                "lt": False,
+                "icc": 0,
+                "ti": 0,
+                "ato": None,
+                "icsd": None,
+                "rp": None,
+                "acrd": None,
+                "rr": None,
+                "nt": {"_t": "tx", "ch": 0, "v": "", "t": 0},
+            },
+            "e": "Task6",
+        }
+    }
+    assert things._offset == start_idx + 1
+
+
+@pytest.fixture()
+def existing_task(task: TodoItem) -> TodoItem:
+    new = task._to_new()
+    # we simulate what happens when we commit the changes
+    task._commit(new)
+    assert task._synced_state
+    return task
+
+
+@freeze_time(datetime(2024, 12, 9, 12, 31, 59, 259910, tzinfo=timezone.utc))
+def test_update(
+    things: ThingsClient,
+    existing_task: TodoItem,
+    account_id: uuid.UUID,
+    httpx_mock: HTTPXMock,
+):
+    start_idx = things._offset
+    assert start_idx == 123
+
+    httpx_mock.reset()
+    httpx_mock.add_response(
+        200,
+        json={"server-head-index": 124},
+    )
+    existing_task.title = "test_update"
+    things.commit(existing_task)
+    request = httpx_mock.get_request()
+    assert request
+    assert request.method == "POST"
+    assert (
+        request.url
+        == f"https://cloud.culturedcode.com/version/1/history/{account_id}/commit?ancestor-index=123&_cnt=1"
+    )
+    assert json.loads(request.content) == {
+        "tiqzvgT8m7ME4gooPqtdq3": {
+            "t": 1,
+            "p": {
+                "tt": "test_update",
+                "md": 1733747519.25991,
+            },
+            "e": "Task6",
+        }
+    }
     assert things._offset == start_idx + 1
 
 
@@ -176,10 +274,10 @@ def test_deserialize_history_new(history_new: HistoryResponse):
     assert all(isinstance(update.body, NewBody) for update in updates)
 
 
-def test_process_new(things: ThingsClient, history_new: HistoryResponse):
+def test_history_new(things: ThingsClient, history_new: HistoryResponse):
     things._items.clear()
 
-    things._process_updates(history_new)
+    things._process_history(history_new)
     todos = list(things._items.values())
     assert len(todos) == 1
     time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
@@ -254,7 +352,7 @@ def test_deserialize_history_edit(history_edit: HistoryResponse):
     assert all(isinstance(update.body, EditBody) for update in updates)
 
 
-def test_process_updated(things: ThingsClient, history_edit: HistoryResponse):
+def test_history_edit(things: ThingsClient, history_edit: HistoryResponse):
     things._items.clear()
     update = next(history_edit.updates)
 
@@ -262,7 +360,7 @@ def test_process_updated(things: ThingsClient, history_edit: HistoryResponse):
     todo._uuid = update.id
     things._items[update.id] = todo
 
-    things._process_updates(history_edit)
+    things._process_history(history_edit)
     assert len(things._items) == 1
     updated_todo = things._items[todo.uuid]
     assert updated_todo.uuid == todo.uuid
@@ -383,10 +481,10 @@ def history_mixed(history_data_mixed: dict[str, Any]) -> HistoryResponse:
     return HistoryResponse.model_validate(history_data_mixed)
 
 
-def test_process_multiple(things: ThingsClient, history_mixed: HistoryResponse):
+def test_history_mixed(things: ThingsClient, history_mixed: HistoryResponse):
     things._items.clear()
 
-    things._process_updates(history_mixed)
+    things._process_history(history_mixed)
     todos = things._items
     UUID2 = "aBCDiHyah4Uf0MQqp11js2"
     UUID3 = "aBCDiHyah4Uf0MQqp11js3"

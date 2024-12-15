@@ -223,8 +223,8 @@ class TodoDeltaApiObject(pydantic.BaseModel):
     status: Annotated[Status | None, pydantic.Field(alias="ss")] = None
     destination: Annotated[Destination | None, pydantic.Field(alias="st")] = None
     creation_date: Annotated[TimestampInt | None, pydantic.Field(alias="cd")] = None
-    modification_date: Annotated[TimestampFloat | None, pydantic.Field(alias="md")] = (
-        None
+    modification_date: Annotated[TimestampFloat, pydantic.Field(alias="md")] = (
+        pydantic.Field(default_factory=Util.now)
     )
     scheduled_date: Annotated[TimestampInt | None, pydantic.Field(alias="sr")] = None
     today_index_reference_date: Annotated[
@@ -396,7 +396,7 @@ class TodoItem(pydantic.BaseModel):
         else:
             delta = complete_or_delta.model_dump(by_alias=False, exclude_none=True)
             for key in delta.keys():
-                new_value = getattr(delta, key)
+                new_value = getattr(complete_or_delta, key)
                 setattr(self._synced_state, key, new_value)
 
     @property
