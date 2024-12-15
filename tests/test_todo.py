@@ -436,20 +436,20 @@ def test_todo_from_api_object():
     assert todo.after_completion_reference_date is None
     assert todo.recurrence_rule is None
     assert todo.note == Note()
-    assert todo._api_object == api_object
+    assert todo._synced_state == api_object
 
 
 def test_to_new(task: TodoItem):
-    assert task._api_object is None
+    assert task._synced_state is None
     new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
-    assert task._api_object
-    assert task._api_object.title == "test task"
+    assert task._synced_state
+    assert task._synced_state.title == "test task"
 
 
 def test_to_new_exists(task: TodoItem):
-    assert task._api_object is None
+    assert task._synced_state is None
     new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
@@ -468,7 +468,7 @@ def test_to_edit_does_not_exist(task: TodoItem):
 
 
 def test_to_edit_unchanged(task: TodoItem):
-    assert task._api_object is None
+    assert task._synced_state is None
     new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
@@ -478,7 +478,7 @@ def test_to_edit_unchanged(task: TodoItem):
 
 
 def test_to_edit(task: TodoItem):
-    assert task._api_object is None
+    assert task._synced_state is None
     new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)
@@ -490,7 +490,7 @@ def test_to_edit(task: TodoItem):
 
 
 def test_to_edit_detect_reverts(task: TodoItem):
-    assert task._api_object is None
+    assert task._synced_state is None
     new = task._to_new()
     # we simulate what happens when we commit the changes
     task._commit(new)

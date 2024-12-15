@@ -213,7 +213,7 @@ class TodoApiObject(pydantic.BaseModel):
         todo._areas = self.areas
         todo._evening = self.evening
         todo._type = self.type
-        todo._api_object = self
+        todo._synced_state = self
         return todo
 
 
@@ -316,10 +316,10 @@ class TodoItem(pydantic.BaseModel):
     after_completion_reference_date: datetime | None = pydantic.Field(default=None)
     recurrence_rule: str | None = pydantic.Field(default=None)  # TODO: weird XML values
     note: Note = pydantic.Field(default_factory=Note)
-    _api_object: TodoApiObject | None = pydantic.PrivateAttr(default=None)
+    _synced_state: TodoApiObject | None = pydantic.PrivateAttr(default=None)
 
     def to_update(self) -> Update:
-        if not self._api_object:
+        if not self._synced_state:
             complete = self._to_new()
             body = NewBody(payload=complete)
             update = Update(id=self.uuid, body=body)
@@ -330,7 +330,7 @@ class TodoItem(pydantic.BaseModel):
         return update
 
     def _to_new(self) -> TodoApiObject:
-        if self._api_object:
+        if self._synced_state:
             msg = (
                 f"current version exists for todo, use {self._to_edit.__name__} instead"
             )
@@ -373,14 +373,14 @@ class TodoItem(pydantic.BaseModel):
         )
 
     def _to_edit(self) -> TodoDeltaApiObject:
-        if not self._api_object:
+        if not self._synced_state:
             msg = f"no current version exists for todo, use {self._to_new.__name__} instead"
             raise ValueError(msg)
 
         keys = self.model_dump(by_alias=False).keys()
         edits = {}
         for key in keys:
-            current_value = getattr(self._api_object, key)
+            current_value = getattr(self._synced_state, key)
             new_value = getattr(self, key)
             if current_value == new_value:
                 continue
@@ -391,13 +391,13 @@ class TodoItem(pydantic.BaseModel):
 
     def _commit(self, complete_or_delta: TodoApiObject | TodoDeltaApiObject) -> None:
         if isinstance(complete_or_delta, TodoApiObject):
-            self._api_object = complete_or_delta
+            self._synced_state = complete_or_delta
 
         else:
             delta = complete_or_delta.model_dump(by_alias=False, exclude_none=True)
             for key in delta.keys():
                 new_value = getattr(delta, key)
-                setattr(self._api_object, key, new_value)
+                setattr(self._synced_state, key, new_value)
 
     @property
     def uuid(self) -> ShortUUID:
