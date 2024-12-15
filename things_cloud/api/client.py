@@ -2,6 +2,7 @@ import httpx
 from httpx import Request, RequestError, Response
 from structlog import get_logger
 
+from things_cloud.api.account import Account
 from things_cloud.api.const import API_BASE, HEADERS
 from things_cloud.api.exceptions import ThingsCloudException
 from things_cloud.models.todo import (
@@ -18,9 +19,10 @@ log = get_logger()
 
 
 class ThingsClient:
-    def __init__(self, acc: str, initial_offset: int | None = None) -> None:
+    def __init__(self, account: Account) -> None:
+        self._account = account
         self._items: dict[str, TodoItem] = {}  # TODO: create DB
-        self._base_url: str = f"{API_BASE}/history/{acc}"
+        self._base_url: str = f"{API_BASE}/history/{account._info.history_key}"
         self._client = httpx.Client(
             base_url=self._base_url,
             headers=HEADERS,
@@ -29,10 +31,8 @@ class ThingsClient:
                 "response": [self.raise_on_4xx_5xx, self.log_response],
             },
         )
-        if initial_offset:
-            self._offset: int = initial_offset
-        else:
-            self.update()
+        self._session = account.new_session()
+        self._offset = self._session.head_index
 
     def __del__(self):
         self._client.close()
@@ -54,10 +54,6 @@ class ThingsClient:
         )
         response.read()  # access response body
         log.debug("Body", content=response.content)
-
-    @property
-    def offset(self) -> int:
-        return self._offset
 
     def update(self) -> None:
         data = self.__fetch(self._offset)
@@ -132,6 +128,6 @@ class ThingsClient:
                 "ancestor-index": str(index),
                 "_cnt": "1",
             },
-            content=update.to_api_payload(),
+            json=update.to_api_payload(),
         )
         return CommitResponse.model_validate_json(response.read())

@@ -16,15 +16,15 @@ Contributions are welcome to translate the rest of the fields.
 
 ```python
 from things_cloud import ThingsClient
+from things_cloud.api.account import Account, Credentials
 from things_cloud.models import TodoItem
 
-ACCOUNT = "<your-account-id>"
-# current head index of Cloud database (if you know it)
-OFFSET = 1234
-# otherwise
-OFFSET = None
+EMAIL = os.environ["THINGS_EMAIL"]
+PASSWORD = os.environ["THINGS_PASSWORD"]
 
-things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
+credentials = Credentials(email=EMAIL, password=PASSWORD)
+account = Account.login(credentials)
+things = ThingsClient(account)
 # create a new project
 project = TodoItem(title="Things Cloud Project").as_project()
 # push to Things Cloud
@@ -40,7 +40,21 @@ todo.today()
 things.commit(todo)
 ```
 
-See [main.py](main.py).
+## Example
+
+See [main.py](./main.py).
+
+1. Install dependencies
+
+```sh
+poetry install
+```
+
+2. Pass your Things Cloud credentials as environment examples to run the example
+
+```sh
+THINGS_EMAIL=your-email@example.com THINGS_PASSWORD=your-password python main.py
+```
 
 ### Progress
 

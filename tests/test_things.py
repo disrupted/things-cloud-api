@@ -1,8 +1,12 @@
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 import pytest
+from pydantic import SecretStr
+from pytest_httpx import HTTPXMock
 
+from things_cloud.api.account import Account, Credentials
 from things_cloud.api.client import HistoryResponse, ThingsClient
 from things_cloud.models.todo import (
     Destination,
@@ -14,19 +18,96 @@ from things_cloud.models.todo import (
     Type,
 )
 
-ACCOUNT = ""  # TODO
-OFFSET = 123
-things = ThingsClient(ACCOUNT, initial_offset=123)
+
+@pytest.fixture()
+def account_id() -> uuid.UUID:
+    return uuid.uuid4()
 
 
-@pytest.mark.skip(reason="should put mocks in place")
-def test_create():
-    start_idx = things.offset
-    assert start_idx == OFFSET
+@pytest.fixture()
+def account(account_id: uuid.UUID, httpx_mock: HTTPXMock) -> Account:
+    credentials = Credentials(
+        email="johndoe@example.com", password=SecretStr("example_f0$'@")
+    )
+    httpx_mock.add_response(
+        200,
+        json={
+            "SLA-version-accepted": "5",
+            "email": "johndoe@example.com",
+            "history-key": str(account_id),
+            "issues": [],
+            "maildrop-email": "maildrop-does-not-exist@things.email",
+            "status": "SYAccountStatusActive",
+        },
+    )
+    account = Account.login(credentials)
+    assert len(httpx_mock.get_requests()) == 1
+    request = httpx_mock.get_request()
+    assert request
+    assert request.method == "GET"
+    assert (
+        request.url
+        == "https://cloud.culturedcode.com/version/1/account/johndoe@example.com"
+    )
+    assert request.headers["Authorization"] == "Password example_f0%24'%40"
+    return account
+
+
+def test_login(account_id: uuid.UUID, account: Account):
+    assert account._info.sla_version_accepted == "5"
+    assert account._info.email == "johndoe@example.com"
+    assert account._info.history_key == account_id
+    assert account._info.issues == []
+    assert account._info.maildrop_email == "maildrop-does-not-exist@things.email"
+    assert account._info.status == "SYAccountStatusActive"
+
+
+@pytest.fixture()
+def things(account: Account, httpx_mock: HTTPXMock) -> ThingsClient:
+    httpx_mock.reset()
+    httpx_mock.add_response(
+        201,
+        json={"headIndex": 123, "historyKeySessionSecret": "fake"},
+    )
+    things = ThingsClient(account)
+    request = httpx_mock.get_request()
+    assert request
+    assert request.method == "POST"
+    assert (
+        request.url
+        == "https://cloud.culturedcode.com/api/account/login/getT3SharedSession"
+    )
+    assert (
+        request.headers["Authorization"]
+        == "B64SON eyJlcCI6IHsiZSI6ICJqb2huZG9lQGV4YW1wbGUuY29tIiwgInAiOiAiZXhhbXBsZV9mMCQnQCJ9fQ=="
+    )
+    return things
+
+
+def test_client_session(things: ThingsClient):
+    assert things._session.head_index == 123
+    assert things._session.history_key_session_secret == "fake"
+
+
+def test_create(things: ThingsClient, account_id: uuid.UUID, httpx_mock: HTTPXMock):
+    start_idx = things._offset
+    assert start_idx == 123
     item = TodoItem(title="test_create")
-    new_idx = things.commit(item)
-    assert new_idx is not None
-    assert new_idx == start_idx + 1
+
+    httpx_mock.reset()
+    httpx_mock.add_response(
+        200,
+        json={"server-head-index": 124},
+    )
+    things.commit(item)
+    request = httpx_mock.get_request()
+    assert request
+    assert request.method == "POST"
+    assert (
+        request.url
+        == f"https://cloud.culturedcode.com/version/1/history/{account_id}/commit?ancestor-index=124&_cnt=1"
+    )
+    assert things._offset == start_idx + 1
 
 
 @pytest.fixture()
@@ -95,7 +176,7 @@ def test_deserialize_history_new(history_new: HistoryResponse):
     assert all(isinstance(update.body, NewBody) for update in updates)
 
 
-def test_process_new(history_new: HistoryResponse):
+def test_process_new(things: ThingsClient, history_new: HistoryResponse):
     things._items.clear()
 
     things._process_updates(history_new)
@@ -173,7 +254,7 @@ def test_deserialize_history_edit(history_edit: HistoryResponse):
     assert all(isinstance(update.body, EditBody) for update in updates)
 
 
-def test_process_updated(history_edit: HistoryResponse):
+def test_process_updated(things: ThingsClient, history_edit: HistoryResponse):
     things._items.clear()
     update = next(history_edit.updates)
 
@@ -302,7 +383,7 @@ def history_mixed(history_data_mixed: dict[str, Any]) -> HistoryResponse:
     return HistoryResponse.model_validate(history_data_mixed)
 
 
-def test_process_multiple(history_mixed: HistoryResponse):
+def test_process_multiple(things: ThingsClient, history_mixed: HistoryResponse):
     things._items.clear()
 
     things._process_updates(history_mixed)

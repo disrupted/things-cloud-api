@@ -1,19 +1,23 @@
 import os
 from time import sleep
 
+from pydantic import SecretStr
 from structlog import get_logger
 
 from things_cloud import ThingsClient
+from things_cloud.api.account import Account, Credentials
 from things_cloud.models import TodoItem
 
 log = get_logger()
 
-ACCOUNT = os.environ["THINGS_ACCOUNT"]
-OFFSET = int(os.environ.get("THINGS_OFFSET", 0))
+EMAIL = os.environ["THINGS_EMAIL"]
+PASSWORD = os.environ["THINGS_PASSWORD"]
 
 
 def main():
-    things = ThingsClient(ACCOUNT, initial_offset=OFFSET)
+    credentials = Credentials(email=EMAIL, password=SecretStr(PASSWORD))
+    account = Account.login(credentials)
+    things = ThingsClient(account)
 
     # create a new project
     project = TodoItem(title="Things Cloud Project").as_project()
