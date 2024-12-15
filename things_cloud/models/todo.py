@@ -65,11 +65,14 @@ class Update(pydantic.BaseModel):
 class UpdateType(IntEnum):
     NEW = 0
     EDIT = 1
+    DELETE = 2
 
 
 class EntityType(StrEnum):
-    TASK_6 = "Task6"
-    CHECKLIST_ITEM_3 = "ChecklistItem3"
+    TASK = "Task6"
+    CHECKLIST_ITEM = "ChecklistItem3"
+    AREA = "Area2"
+    TAG = "Tag4"
 
 
 class NewBody(pydantic.BaseModel):
@@ -77,7 +80,7 @@ class NewBody(pydantic.BaseModel):
 
     type: Annotated[Literal[UpdateType.NEW], pydantic.Field(alias="t")] = UpdateType.NEW
     payload: Annotated[TodoApiObject, pydantic.Field(alias="p")]
-    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK
 
     def to_api_payload(self) -> dict[str, Any]:
         return self.model_dump(mode="json", by_alias=True)
@@ -90,13 +93,32 @@ class EditBody(pydantic.BaseModel):
         UpdateType.EDIT
     )
     payload: Annotated[TodoDeltaApiObject, pydantic.Field(alias="p")]
-    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK_6
+    entity: Annotated[EntityType, pydantic.Field(alias="e")] = EntityType.TASK
 
     def to_api_payload(self) -> dict[str, Any]:
         return self.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
-Body = Annotated[NewBody | EditBody, pydantic.Field(discriminator="type")]
+class TodoDeleteApiObject(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(extra="forbid")
+
+
+class DeleteBody(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(populate_by_name=True)
+
+    type: Annotated[Literal[UpdateType.DELETE], pydantic.Field(alias="t")] = (
+        UpdateType.DELETE
+    )
+    payload: Annotated[TodoDeleteApiObject, pydantic.Field(alias="p")] = (
+        TodoDeleteApiObject()  # empty payload
+    )
+    entity: Annotated[EntityType, pydantic.Field(alias="e")]
+
+    def to_api_payload(self) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+Body = Annotated[NewBody | EditBody | DeleteBody, pydantic.Field(discriminator="type")]
 
 
 class Type(IntEnum):
@@ -187,6 +209,8 @@ class TodoApiObject(pydantic.BaseModel):
     #         alias="ts", description="for checklist items, references parent task"
     #     ),
     # ] = None  # exclude otherwise
+    # sh: Annotated[Any | None, pydantic.Field(alias="sh", description="for Tag")] = None
+    # pn: Annotated[list, pydantic.Field(alias="pn", description="for Tag")] = []
 
     def to_todo(self) -> TodoItem:
         todo = TodoItem(
@@ -406,9 +430,14 @@ class TodoItem(pydantic.BaseModel):
             raise ValueError("no changes found")
         return TodoDeltaApiObject.model_validate(edits)
 
-    def _commit(self, complete_or_delta: TodoApiObject | TodoDeltaApiObject) -> None:
+    def _commit(
+        self,
+        complete_or_delta: TodoApiObject | TodoDeltaApiObject | TodoDeleteApiObject,
+    ) -> None:
         if isinstance(complete_or_delta, TodoApiObject):
             self._synced_state = complete_or_delta
+        elif isinstance(complete_or_delta, TodoDeleteApiObject):
+            self._synced_state = None
 
         else:
             delta = complete_or_delta.model_dump(by_alias=False, exclude_none=True)
