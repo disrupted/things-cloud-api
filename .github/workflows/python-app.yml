@@ -12,40 +12,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - "3.12"
+        python-version: ["3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Configure Poetry virtualenv
-        run: poetry config virtualenvs.in-project true
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry
+          version: latest
 
-      - run: poetry env use ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - name: Check Poetry config and lockfile
-        run: poetry run pre-commit run poetry-check --all-files
+      - name: Check uv.lock
+        run: uv run --frozen pre-commit run uv-lock-check --all-files
 
       - name: Lint (ruff)
-        run: poetry run ruff check . --config pyproject.toml --output-format=github --no-fix
+        run: uv run --frozen ruff check . --config pyproject.toml --output-format=github --no-fix
 
       - name: Formatting (ruff)
-        run: poetry run pre-commit run ruff-format --all-files --show-diff-on-failure
+        run: uv run --frozen pre-commit run ruff-format --all-files --show-diff-on-failure
 
       - name: Typing (pyright)
-        run: poetry run pre-commit run pyright --all-files
+        run: uv run --frozen pre-commit run pyright --all-files
 
       - name: Test
-        run: poetry run pytest tests
+        run: uv run --frozen pytest tests
