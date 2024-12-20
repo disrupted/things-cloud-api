@@ -5,9 +5,3 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-
-  # Maintain dependencies for poetry
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "daily"
