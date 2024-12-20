@@ -22,9 +22,7 @@ dev = [
   "pytest-httpx>=0.35.0",
   "ruff>=0.8.3",
   "pyright[nodejs]>=1.1.390",
-  "pre-commit>=4.0.1",
   "freezegun>=1.5.1",
-  "virtualenv>=20.28.0", # HACK: fix pre-commit: ModuleNotFoundError: No module named 'distutils'
 ]
 
 [tool.ruff]

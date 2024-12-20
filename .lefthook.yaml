@@ -1,0 +1,30 @@
+pre-commit:
+  parallel: true
+  commands:
+    lock:
+      glob: "{pyproject.toml,uv.lock}"
+      run: uv lock --check
+    lint:
+      glob: "*.py"
+      run: uv run ruff check --fix {staged_files}
+      stage_fixed: true
+    fmt:
+      glob: "*.py"
+      run: uv run ruff format {staged_files}
+      stage_fixed: true
+    pyright:
+      glob: "*.py"
+      run: uv run pyright
+
+post-checkout:
+  commands:
+    dependencies:
+      glob: uv.lock
+      run: uv sync
+
+post-merge:
+  files: "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD"
+  commands:
+    dependencies:
+      glob: uv.lock
+      run: uv sync
