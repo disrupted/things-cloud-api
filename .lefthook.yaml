@@ -2,7 +2,7 @@ pre-commit:
   parallel: true
   commands:
     lock:
-      glob: "{pyproject.tomk,uv.lock}"
+      glob: "{pyproject.toml,uv.lock}"
       run: uv lock --check
     lint:
       glob: "*.py"
