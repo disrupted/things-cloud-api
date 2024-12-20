@@ -2,7 +2,7 @@ pre-commit:
   parallel: true
   commands:
     lock:
-      glob: uv.lock
+      glob: "{pyproject.tomk,uv.lock}"
       run: uv lock --check
     lint:
       glob: "*.py"
@@ -13,6 +13,7 @@ pre-commit:
       run: uv run ruff format {staged_files}
       stage_fixed: true
     pyright:
+      glob: "*.py"
       run: uv run pyright
 
 post-checkout:
