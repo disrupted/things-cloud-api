@@ -2,24 +2,24 @@
 repos:
   - repo: local
     hooks:
-      - id: poetry-install
-        name: poetry-install
-        description: install Poetry dependencies from the lock file
-        entry: poetry install
+      - id: uv-sync
+        name: uv-sync
+        description: install uv dependencies from the lock file
+        entry: uv sync
         language: python
         pass_filenames: false
         stages: [post-checkout, post-merge]
         always_run: true
-      - id: poetry-check
-        name: poetry-check
-        description: validate Poetry config and dependency lock file
-        entry: poetry check
+      - id: uv-lock-check
+        name: uv-lock-check
+        description: validate uv dependency lock file
+        entry: uv lock --check
         language: python
         pass_filenames: false
-        files: ^(.*/)?(pyproject\.toml|poetry\.lock)$
+        files: ^(.*/)?(pyproject\.toml|uv\.lock)$
       - id: ruff-lint
         name: ruff-lint
-        entry: poetry run ruff check
+        entry: uv run ruff check
         args:
           [
             --force-exclude,
@@ -34,14 +34,14 @@ repos:
         require_serial: true # run once for all files
       - id: ruff-format
         name: ruff-format
-        entry: poetry run ruff format
+        entry: uv run ruff format
         args: [--force-exclude, --config, pyproject.toml]
         language: system
         types_or: [python]
         require_serial: true # run once for all files
       - id: pyright
         name: pyright
-        entry: poetry run pyright
+        entry: uv run pyright
         language: system
         types: [python]
         require_serial: true # run once for all files

@@ -1,4 +1,4 @@
-from datetime import datetime, time, timezone
+from datetime import UTC, datetime, time
 from typing import Annotated
 
 import pydantic
@@ -9,7 +9,7 @@ ShortUUID = Annotated[str, pydantic.StringConstraints(min_length=22, max_length=
 def from_timestamp(timestamp: datetime | int | float) -> datetime:
     if isinstance(timestamp, datetime):
         return timestamp
-    return datetime.fromtimestamp(timestamp, timezone.utc)
+    return datetime.fromtimestamp(timestamp, UTC)
 
 
 def timestamp_rounded(dt: datetime) -> int:

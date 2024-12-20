@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from shortuuid import ShortUUID
 
@@ -21,7 +21,7 @@ class Util:
     @staticmethod
     def as_timestamp(dt: datetime) -> int:
         """Convert datetime object to a UTC timestamp."""
-        return int(dt.replace(tzinfo=timezone.utc).timestamp())
+        return int(dt.replace(tzinfo=UTC).timestamp())
 
     @staticmethod
     def uuid(length: int = 22) -> str:

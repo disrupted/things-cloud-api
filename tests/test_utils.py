@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from freezegun import freeze_time
 
@@ -9,7 +9,7 @@ FAKE_TIME = datetime(2021, 11, 1, 21, 0, 59, tzinfo=timezone(timedelta(hours=2))
 
 @freeze_time(FAKE_TIME)
 def test_now():
-    assert Util.now() == datetime(2021, 11, 1, 19, 0, 59, tzinfo=timezone.utc)
+    assert Util.now() == datetime(2021, 11, 1, 19, 0, 59, tzinfo=UTC)
 
 
 @freeze_time(FAKE_TIME)
@@ -36,7 +36,7 @@ def test_offset_date():
 @freeze_time(FAKE_TIME)
 def test_as_timestamp():
     assert Util.as_timestamp(datetime(2022, 1, 1)) == 1640995200
-    assert Util.as_timestamp(datetime(2022, 1, 1, tzinfo=timezone.utc)) == 1640995200
+    assert Util.as_timestamp(datetime(2022, 1, 1, tzinfo=UTC)) == 1640995200
     assert Util.as_timestamp(Util.today()) == 1635724800
 
 
