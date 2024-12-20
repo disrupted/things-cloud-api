@@ -25,16 +25,16 @@ jobs:
           version: latest
 
       - name: Check uv.lock
-        run: uv run --frozen pre-commit run uv-lock-check --all-files
+        run: uv lock --check
 
       - name: Lint (ruff)
         run: uv run --frozen ruff check . --config pyproject.toml --output-format=github --no-fix
 
       - name: Formatting (ruff)
-        run: uv run --frozen pre-commit run ruff-format --all-files --show-diff-on-failure
+        run: uv run --frozen ruff format
 
       - name: Typing (pyright)
-        run: uv run --frozen pre-commit run pyright --all-files
+        run: uv run --frozen pyright
 
   test:
     name: Test
