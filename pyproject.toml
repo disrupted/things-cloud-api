@@ -3,7 +3,9 @@ name = "things-cloud"
 version = "0.1.0"
 description = "Client for Things Cloud API"
 readme = "README.md"
-authors = ["disrupted <hi@salomonpopp.me>"]
+authors = [
+  { name = "disrupted", email = "hi@salomonpopp.me" },
+]
 requires-python = ">=3.12"
 dependencies = [
   "structlog>=24.4.0",
