@@ -1,4 +1,4 @@
-from datetime import datetime, time, timezone
+from datetime import UTC, datetime, time
 
 import pytest
 from freezegun import freeze_time
@@ -328,8 +328,8 @@ def test_serde():
         "xx": {"sn": {}, "_t": "oo"},
     }
     todo = TodoApiObject.model_validate(api_object)
-    timestamp_rounded = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
-    timestamp_precise = datetime(2022, 1, 3, 18, 29, 27, 7013, tzinfo=timezone.utc)
+    timestamp_rounded = datetime(2022, 1, 3, 18, 29, 27, tzinfo=UTC)
+    timestamp_precise = datetime(2022, 1, 3, 18, 29, 27, 7013, tzinfo=UTC)
     assert todo.index == 1234
     assert todo.title == "test task"
     assert todo.status is Status.TODO
@@ -357,7 +357,7 @@ def test_serde():
     assert todo.leaves_tombstone is False
     assert todo.instance_creation_count == 0
     assert todo.today_index == 0
-    assert todo.reminder == time(12, 0, tzinfo=timezone.utc)
+    assert todo.reminder == time(12, 0, tzinfo=UTC)
     assert todo.instance_creation_start_date is None
     assert todo.repeater is None
     assert todo.after_completion_reference_date is None
@@ -368,7 +368,7 @@ def test_serde():
 
 
 def test_todo_from_api_object():
-    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
+    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=UTC)
     api_object = TodoApiObject.model_validate(
         {
             "index": 1234,
@@ -483,7 +483,7 @@ def test_to_edit_unchanged(task: TodoItem):
         task._to_edit()
 
 
-@freeze_time(datetime(2024, 12, 9, 12, 31, 59, 259919, tzinfo=timezone.utc))
+@freeze_time(datetime(2024, 12, 9, 12, 31, 59, 259919, tzinfo=UTC))
 def test_to_edit(task: TodoItem):
     assert task._synced_state is None
     new = task._to_new()

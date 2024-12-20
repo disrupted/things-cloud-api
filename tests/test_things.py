@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -93,14 +93,14 @@ def test_client_session(things: ThingsClient):
 
 
 @pytest.fixture()
-@freeze_time(datetime(2024, 12, 9, 12, 31, 46, 919961, tzinfo=timezone.utc))
+@freeze_time(datetime(2024, 12, 9, 12, 31, 46, 919961, tzinfo=UTC))
 def task() -> TodoItem:
     task = TodoItem(title="test_create")
     task._uuid = "tiqzvgT8m7ME4gooPqtdq3"  # overwrite uuid so that we can assert it
     return task
 
 
-@freeze_time(datetime(2024, 12, 9, 12, 31, 47, 123456, tzinfo=timezone.utc))
+@freeze_time(datetime(2024, 12, 9, 12, 31, 47, 123456, tzinfo=UTC))
 def test_create(
     things: ThingsClient, task: TodoItem, account_id: uuid.UUID, httpx_mock: HTTPXMock
 ):
@@ -174,7 +174,7 @@ def existing_task(task: TodoItem) -> TodoItem:
     return task
 
 
-@freeze_time(datetime(2024, 12, 9, 12, 31, 59, 259910, tzinfo=timezone.utc))
+@freeze_time(datetime(2024, 12, 9, 12, 31, 59, 259910, tzinfo=UTC))
 def test_update(
     things: ThingsClient,
     existing_task: TodoItem,
@@ -284,7 +284,7 @@ def test_history_new(things: ThingsClient, history_new: HistoryResponse):
     things._process_history(history_new)
     todos = list(things._items.values())
     assert len(todos) == 1
-    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=timezone.utc)
+    time = datetime(2022, 1, 3, 18, 29, 27, tzinfo=UTC)
     todo = todos[0]
     assert todo.uuid == "aBCDiHyah4Uf0MQqp11jsX"
     assert todo.index == 1234
@@ -371,7 +371,7 @@ def test_history_edit(things: ThingsClient, history_edit: HistoryResponse):
     assert updated_todo.uuid == todo.uuid
     assert updated_todo.title == "test updated"
     assert updated_todo.modification_date == datetime(
-        2022, 1, 3, 18, 29, 27, 123456, tzinfo=timezone.utc
+        2022, 1, 3, 18, 29, 27, 123456, tzinfo=UTC
     )
     # assert not todo._changes
 

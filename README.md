@@ -44,16 +44,10 @@ things.commit(todo)
 
 See [main.py](./main.py).
 
-1. Install dependencies
+Pass your Things Cloud credentials as environment examples to run the example
 
 ```sh
-poetry install
-```
-
-2. Pass your Things Cloud credentials as environment examples to run the example
-
-```sh
-THINGS_EMAIL=your-email@example.com THINGS_PASSWORD=your-password python main.py
+THINGS_EMAIL=your-email@example.com THINGS_PASSWORD=your-password uv run main.py
 ```
 
 ### Progress
