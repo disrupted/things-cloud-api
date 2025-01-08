@@ -31,7 +31,7 @@ jobs:
         run: uv run --frozen ruff check . --config pyproject.toml --output-format=github --no-fix
 
       - name: Formatting (ruff)
-        run: uv run --frozen ruff format
+        run: uv run --frozen ruff format --check
 
       - name: Typing (pyright)
         run: uv run --frozen pyright
